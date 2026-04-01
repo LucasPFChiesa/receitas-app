@@ -1,0 +1,62 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fb;
+    color: #243447;
+}
+.topo {
+    background: #1f4d7a;
+    color: #fff;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+.topo h1 { margin: 0 0 4px; }
+.topo p { margin: 0; opacity: 0.9; }
+.topo nav { display: flex; gap: 14px; flex-wrap: wrap; }
+.topo nav a {
+    color: white; text-decoration: none; font-weight: bold;
+}
+.container { max-width: 1100px; margin: 28px auto; padding: 0 16px; }
+.card {
+    background: white; border-radius: 14px; padding: 24px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+.card-login { max-width: 430px; margin: 40px auto; }
+.formulario { display: flex; flex-direction: column; gap: 16px; }
+.formulario input, .formulario select, .formulario textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid #cfd9e2;
+    border-radius: 10px; margin-top: 6px;
+}
+button, .btn-sec {
+    background: #1f4d7a; color: white; border: none; padding: 10px 16px;
+    border-radius: 10px; text-decoration: none; cursor: pointer; display: inline-block;
+}
+.btn-sec { background: #708090; }
+.credenciais {
+    margin-top: 18px; padding: 14px; background: #eef4fa; border-radius: 10px;
+}
+.alerta { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; }
+.alerta.sucesso { background: #e5f7e8; color: #136f2d; }
+.alerta.erro { background: #fde8e8; color: #9b1c1c; }
+.linha-titulo {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.filtros { display: flex; gap: 10px; flex-wrap: wrap; }
+table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+th, td { border-bottom: 1px solid #e3e9ef; padding: 12px 10px; text-align: left; vertical-align: top; }
+thead th { background: #eef4fa; }
+.acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.acoes a, .link-btn { color: #1f4d7a; background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
+.grid-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.col-span-2 { grid-column: span 2; }
+.botoes-form { display: flex; gap: 12px; }
+@media (max-width: 800px) {
+    .grid-form { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+}

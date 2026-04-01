@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo if titulo else 'Sistema de Receitas' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="topo">
+        <div>
+            <h1>Sistema de Receitas</h1>
+            <p>Cadastro e consulta de receitas doces e salgadas</p>
+        </div>
+        {% if session.get('usuario_id') %}
+        <nav>
+            <a href="{{ url_for('listar_receitas') }}">Receitas</a>
+            <a href="{{ url_for('nova_receita') }}">Nova Receita</a>
+            <a href="{{ url_for('logout') }}">Sair</a>
+        </nav>
+        {% endif %}
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for categoria, mensagem in messages %}
+                    <div class="alerta {{ categoria }}">{{ mensagem }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block conteudo %}{% endblock %}
+    </main>
+</body>
+</html>

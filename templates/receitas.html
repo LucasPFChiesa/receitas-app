@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block conteudo %}
+<section class="card">
+    <div class="linha-titulo">
+        <div>
+            <h2>Receitas cadastradas</h2>
+            <p>Bem-vindo, {{ session.get('usuario_nome') }}.</p>
+        </div>
+        <div class="filtros">
+            <a href="{{ url_for('listar_receitas') }}" class="btn-sec">Todas</a>
+            <a href="{{ url_for('listar_receitas', tipo='doce') }}" class="btn-sec">Doces</a>
+            <a href="{{ url_for('listar_receitas', tipo='salgada') }}" class="btn-sec">Salgadas</a>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Data</th>
+                <th>Custo (R$)</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receita in receitas %}
+            <tr>
+                <td>{{ receita['id'] }}</td>
+                <td>{{ receita['nome'] }}</td>
+                <td>{{ receita['descricao'] }}</td>
+                <td>{{ receita['data_registro'] }}</td>
+                <td>{{ '%.2f'|format(receita['custo']) }}</td>
+                <td>{{ receita['tipo_receita'] }}</td>
+                <td class="acoes">
+                    <a href="{{ url_for('editar_receita', id=receita['id']) }}">Editar</a>
+                    <form action="{{ url_for('excluir_receita', id=receita['id']) }}" method="post" onsubmit="return confirm('Deseja excluir esta receita?');">
+                        <button type="submit" class="link-btn">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
