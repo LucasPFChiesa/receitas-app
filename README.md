@@ -29,3 +29,48 @@ A aplicação ficará disponível em:
 - `init_db.py`: cria e popula o banco
 - `templates/`: páginas HTML
 - `static/style.css`: estilos visuais
+
+
+## Funcionalidades
+
+- Tela de login
+- Listagem de receitas cadastradas
+- Cadastro de novas receitas
+- Edição de receitas
+- Exclusão de receitas
+- Banco de dados com receitas e usuário inicial
+- Separação de receitas por tipo: doce ou salgada
+
+## Tecnologias utilizadas
+
+- Python 3
+- Flask
+- SQLite
+- HTML
+- CSS
+- Jinja2
+
+## Estrutura do banco de dados
+
+### Tabela `usuario`
+Campos:
+- `id`
+- `nome`
+- `login`
+- `senha`
+- `situacao`
+
+### Tabela `receita`
+Campos:
+- `id`
+- `nome`
+- `descricao`
+- `data_registro`
+- `custo`
+- `tipo_receita`
+
+## Usuário padrão para acesso
+
+Login:
+```text
+admin
