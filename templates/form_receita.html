@@ -22,6 +22,13 @@
                 <option value="salgada" {% if receita and receita['tipo_receita'] == 'salgada' %}selected{% endif %}>Salgada</option>
             </select>
         </label>
+        <label>Status
+            <select name="status" required>
+                <option value="">Selecione</option>
+                <option value="ativa" {% if receita and receita['status'] == 'ativa' %}selected{% endif %}>Ativa</option>
+                <option value="inativa" {% if receita and receita['status'] == 'inativa' %}selected{% endif %}>Inativa</option>
+            </select>
+        </label>
         <div class="col-span-2 botoes-form">
             <button type="submit">Salvar</button>
             <a href="{{ url_for('listar_receitas') }}" class="btn-sec">Cancelar</a>

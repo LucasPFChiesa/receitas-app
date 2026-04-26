@@ -64,21 +64,68 @@ def logout():
 @app.route('/receitas')
 @login_required
 def listar_receitas():
-    filtro = request.args.get('tipo', '').strip().lower()
-    conn = get_db_connection()
-    if filtro in ('doce', 'salgada'):
-        receitas = conn.execute(
-            'SELECT * FROM receita WHERE tipo_receita = ? ORDER BY id', (filtro,)
-        ).fetchall()
-    else:
-        receitas = conn.execute('SELECT * FROM receita ORDER BY id').fetchall()
-    conn.close()
-    return render_template('receitas.html', receitas=receitas, filtro=filtro)
+    filtro_tipo = request.args.get('tipo', '').strip().lower()
+    filtro_status = request.args.get('status', '').strip().lower()
+    data_inicio = request.args.get('data_inicio', '').strip()
+    data_fim = request.args.get('data_fim', '').strip()
 
+    query = 'SELECT * FROM receita WHERE 1=1'
+    params = []
+
+    if filtro_tipo in ('doce', 'salgada'):
+        query += ' AND tipo_receita = ?'
+        params.append(filtro_tipo)
+
+    if filtro_status in ('ativa', 'inativa'):
+        query += ' AND status = ?'
+        params.append(filtro_status)
+
+    if data_inicio:
+        query += ' AND data_registro >= ?'
+        params.append(data_inicio)
+
+    if data_fim:
+        query += ' AND data_registro <= ?'
+        params.append(data_fim)
+
+    query += ' ORDER BY id'
+
+    conn = get_db_connection()
+    receitas = conn.execute(query, params).fetchall()
+    conn.close()
+
+    return render_template(
+        'receitas.html',
+        receitas=receitas,
+        filtro=filtro_tipo,
+        filtro_status=filtro_status,
+        data_inicio=data_inicio,
+        data_fim=data_fim
+    )
 
 @app.route('/receitas/nova', methods=['GET', 'POST'])
 @login_required
 def nova_receita():
+    if request.method == 'POST':
+        dados = (
+            request.form['nome'].strip(),
+            request.form['descricao'].strip(),
+            request.form['data_registro'].strip(),
+            request.form['custo'].strip(),
+            request.form['tipo_receita'].strip().lower(),
+            request.form['status'].strip().lower(),
+        )
+        conn = get_db_connection()
+        conn.execute(
+            'INSERT INTO receita (nome, descricao, data_registro, custo, tipo_receita, status) VALUES (?, ?, ?, ?, ?, ?)',
+            dados,
+        )
+        conn.commit()
+        conn.close()
+        flash('Receita cadastrada com sucesso.', 'sucesso')
+        return redirect(url_for('listar_receitas'))
+    return render_template('form_receita.html', receita=None, acao='Nova Receita')
+
     if request.method == 'POST':
         dados = (
             request.form['nome'].strip(),
@@ -99,6 +146,25 @@ def nova_receita():
     return render_template('form_receita.html', receita=None, acao='Nova Receita')
 
 
+    if request.method == 'POST':
+        dados = (
+            request.form['nome'].strip(),
+            request.form['descricao'].strip(),
+            request.form['data_registro'].strip(),
+            request.form['custo'].strip(),
+            request.form['tipo_receita'].strip().lower(),
+            request.form['status'].strip().lower(),
+            id,
+        )
+        conn.execute(
+            'UPDATE receita SET nome = ?, descricao = ?, data_registro = ?, custo = ?, tipo_receita = ?, status = ? WHERE id = ?',
+            dados,
+        )
+        conn.commit()
+        conn.close()
+        flash('Receita atualizada com sucesso.', 'sucesso')
+        return redirect(url_for('listar_receitas'))
+
 @app.route('/receitas/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar_receita(id):
@@ -117,10 +183,11 @@ def editar_receita(id):
             request.form['data_registro'].strip(),
             request.form['custo'].strip(),
             request.form['tipo_receita'].strip().lower(),
+            request.form['status'].strip().lower(),
             id,
         )
         conn.execute(
-            'UPDATE receita SET nome = ?, descricao = ?, data_registro = ?, custo = ?, tipo_receita = ? WHERE id = ?',
+            'UPDATE receita SET nome = ?, descricao = ?, data_registro = ?, custo = ?, tipo_receita = ?, status = ? WHERE id = ?',
             dados,
         )
         conn.commit()
@@ -130,7 +197,6 @@ def editar_receita(id):
 
     conn.close()
     return render_template('form_receita.html', receita=receita, acao='Editar Receita')
-
 
 @app.route('/receitas/excluir/<int:id>', methods=['POST'])
 @login_required
