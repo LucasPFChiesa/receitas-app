@@ -168,3 +168,41 @@ def test_edicao_de_id_inexistente_nao_altera_lista():
 
     assert resposta.status_code == 200
     assert b"receita n\xc3\xa3o encontrada" in resposta.data.lower()
+
+def test_exclusao_remove_receita_do_banco():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    antes = conn.execute("SELECT COUNT(*) FROM receita").fetchone()[0]
+    conn.close()
+
+    resposta = client.post("/receitas/excluir/1", follow_redirects=False)
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    depois = conn.execute("SELECT COUNT(*) FROM receita").fetchone()[0]
+    registro = conn.execute("SELECT * FROM receita WHERE id = 1").fetchone()
+    conn.close()
+
+    assert resposta.status_code == 302
+    assert depois == antes - 1
+    assert registro is None
+
+def test_exclusao_redireciona_para_listagem():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    resposta = client.post("/receitas/excluir/2", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert "/receitas" in resposta.headers["Location"]
