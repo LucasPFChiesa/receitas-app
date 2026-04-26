@@ -114,3 +114,57 @@ def test_cadastro_exibe_nova_receita_na_listagem():
 
     assert resposta.status_code == 200
     assert b"canjica teste" in resposta.data.lower()
+
+def test_edicao_altera_nome_no_banco():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    resposta = client.post(
+        "/receitas/editar/1",
+        data={
+            "nome": "Brigadeiro Editado",
+            "descricao": "Doce de leite condensado, chocolate em pó e granulado.",
+            "data_registro": "2026-03-31",
+            "custo": "18.50",
+            "tipo_receita": "doce",
+        },
+        follow_redirects=False
+    )
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    registro = conn.execute(
+        "SELECT nome FROM receita WHERE id = 1"
+    ).fetchone()
+    conn.close()
+
+    assert resposta.status_code == 302
+    assert registro[0] == "Brigadeiro Editado"
+
+def test_edicao_de_id_inexistente_nao_altera_lista():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    resposta = client.post(
+        "/receitas/editar/999",
+        data={
+            "nome": "Receita Fantasma",
+            "descricao": "Nao existe",
+            "data_registro": "2026-04-26",
+            "custo": "10.00",
+            "tipo_receita": "doce",
+        },
+        follow_redirects=True
+    )
+
+    assert resposta.status_code == 200
+    assert b"receita n\xc3\xa3o encontrada" in resposta.data.lower()
