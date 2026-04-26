@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 import sqlite3
 from pathlib import Path
 from functools import wraps
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / 'receitas.db'
@@ -208,6 +211,48 @@ def excluir_receita(id):
     flash('Receita excluída com sucesso.', 'sucesso')
     return redirect(url_for('listar_receitas'))
 
+@app.route('/receitas/pdf')
+@login_required
+def exportar_pdf():
+    conn = get_db_connection()
+    receitas = conn.execute('SELECT * FROM receita ORDER BY id').fetchall()
+    conn.close()
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    largura, altura = A4
+
+    pdf.setTitle('Relatorio de Receitas')
+    pdf.setFont('Helvetica-Bold', 14)
+    pdf.drawString(40, altura - 40, 'Relatório de Receitas')
+
+    y = altura - 80
+    pdf.setFont('Helvetica', 10)
+
+    for receita in receitas:
+        linha = (
+            f"ID: {receita['id']} | "
+            f"Nome: {receita['nome']} | "
+            f"Tipo: {receita['tipo_receita']} | "
+            f"Status: {receita['status']}"
+        )
+        pdf.drawString(40, y, linha)
+        y -= 18
+
+        if y < 40:
+            pdf.showPage()
+            pdf.setFont('Helvetica', 10)
+            y = altura - 40
+
+    pdf.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name='receitas.pdf',
+        mimetype='application/pdf'
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
