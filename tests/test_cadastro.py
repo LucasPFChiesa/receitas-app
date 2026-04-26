@@ -90,3 +90,27 @@ def test_cadastro_redireciona_para_listagem():
 
     assert resposta.status_code == 302
     assert "/receitas" in resposta.headers["Location"]
+
+def test_cadastro_exibe_nova_receita_na_listagem():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    resposta = client.post(
+        "/receitas/nova",
+        data={
+            "nome": "Canjica Teste",
+            "descricao": "Doce com leite",
+            "data_registro": "2026-04-26",
+            "custo": "18.00",
+            "tipo_receita": "doce",
+        },
+        follow_redirects=True
+    )
+
+    assert resposta.status_code == 200
+    assert b"canjica teste" in resposta.data.lower()
