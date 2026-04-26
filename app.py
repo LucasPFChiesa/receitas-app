@@ -5,6 +5,9 @@ from functools import wraps
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+import os
+import smtplib
+from email.mime.text import MIMEText
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / 'receitas.db'
@@ -18,6 +21,24 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def enviar_email(assunto, mensagem, destinatario=None):
+    remetente = os.getenv('EMAIL_REMETENTE')
+    senha = os.getenv('EMAIL_SENHA')
+    destino = destinatario or os.getenv('EMAIL_DESTINO')
+
+    if not remetente or not senha or not destino:
+        print('E-mail não enviado: variáveis EMAIL_REMETENTE, EMAIL_SENHA ou EMAIL_DESTINO não configuradas.')
+        return
+
+    msg = MIMEText(mensagem, 'plain', 'utf-8')
+    msg['Subject'] = assunto
+    msg['From'] = remetente
+    msg['To'] = destino
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
+        servidor.starttls()
+        servidor.login(remetente, senha)
+        servidor.send_message(msg)
 
 def login_required(view):
     @wraps(view)
@@ -125,6 +146,12 @@ def nova_receita():
         )
         conn.commit()
         conn.close()
+        
+        enviar_email(
+            'Receita cadastrada com sucesso',
+            f'A receita "{dados[0]}" foi cadastrada no sistema com status "{dados[5]}".'
+        )
+
         flash('Receita cadastrada com sucesso.', 'sucesso')
         return redirect(url_for('listar_receitas'))
     return render_template('form_receita.html', receita=None, acao='Nova Receita')
@@ -195,6 +222,12 @@ def editar_receita(id):
         )
         conn.commit()
         conn.close()
+
+        enviar_email(
+            'Receita atualizada com sucesso',
+            f'A receita "{dados[0]}" foi atualizada no sistema com status "{dados[5]}".'
+        )
+
         flash('Receita atualizada com sucesso.', 'sucesso')
         return redirect(url_for('listar_receitas'))
 
