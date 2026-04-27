@@ -28,6 +28,7 @@ def test_cadastro_aumenta_quantidade_de_receitas():
             "data_registro": "2026-04-26",
             "custo": "29.90",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=False
     )
@@ -53,6 +54,7 @@ def test_cadastro_salva_nome_correto_no_banco():
             "data_registro": "2026-04-26",
             "custo": "15.50",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=False
     )
@@ -84,6 +86,7 @@ def test_cadastro_redireciona_para_listagem():
             "data_registro": "2026-04-26",
             "custo": "21.00",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=False
     )
@@ -108,6 +111,7 @@ def test_cadastro_exibe_nova_receita_na_listagem():
             "data_registro": "2026-04-26",
             "custo": "18.00",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=True
     )
@@ -132,6 +136,7 @@ def test_edicao_altera_nome_no_banco():
             "data_registro": "2026-03-31",
             "custo": "18.50",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=False
     )
@@ -162,6 +167,7 @@ def test_edicao_de_id_inexistente_nao_altera_lista():
             "data_registro": "2026-04-26",
             "custo": "10.00",
             "tipo_receita": "doce",
+            "status": "ativa",
         },
         follow_redirects=True
     )
