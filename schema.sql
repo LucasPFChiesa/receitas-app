@@ -15,5 +15,6 @@ CREATE TABLE receita (
     descricao TEXT NOT NULL,
     data_registro TEXT NOT NULL,
     custo REAL NOT NULL,
-    tipo_receita TEXT NOT NULL CHECK (tipo_receita IN ('doce', 'salgada'))
+    tipo_receita TEXT NOT NULL CHECK (tipo_receita IN ('doce', 'salgada')),
+    status TEXT NOT NULL CHECK (status IN ('ativa', 'inativa'))
 );

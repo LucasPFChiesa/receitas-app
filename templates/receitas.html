@@ -7,11 +7,41 @@
             <p>Bem-vindo, {{ session.get('usuario_nome') }}.</p>
         </div>
         <div class="filtros">
-            <a href="{{ url_for('listar_receitas') }}" class="btn-sec">Todas</a>
-            <a href="{{ url_for('listar_receitas', tipo='doce') }}" class="btn-sec">Doces</a>
-            <a href="{{ url_for('listar_receitas', tipo='salgada') }}" class="btn-sec">Salgadas</a>
+            <a href="{{ url_for('listar_receitas') }}" class="btn-sec">Limpar filtros</a>
+            <a href="{{ url_for('exportar_pdf') }}" class="btn-sec">Exportar PDF</a>
         </div>
     </div>
+
+    <form method="get" action="{{ url_for('listar_receitas') }}" class="formulario grid-form">
+        <label>Tipo
+            <select name="tipo">
+                <option value="">Todos</option>
+                <option value="doce" {% if filtro == 'doce' %}selected{% endif %}>Doce</option>
+                <option value="salgada" {% if filtro == 'salgada' %}selected{% endif %}>Salgada</option>
+            </select>
+        </label>
+
+        <label>Status
+            <select name="status">
+                <option value="">Todos</option>
+                <option value="ativa" {% if filtro_status == 'ativa' %}selected{% endif %}>Ativa</option>
+                <option value="inativa" {% if filtro_status == 'inativa' %}selected{% endif %}>Inativa</option>
+            </select>
+        </label>
+
+        <label>Data inicial
+            <input type="date" name="data_inicio" value="{{ data_inicio }}">
+        </label>
+
+        <label>Data final
+            <input type="date" name="data_fim" value="{{ data_fim }}">
+        </label>
+
+        <div class="col-span-2 botoes-form">
+            <button type="submit">Filtrar</button>
+            <a href="{{ url_for('listar_receitas') }}" class="btn-sec">Limpar</a>
+        </div>
+    </form>
 
     <table>
         <thead>
@@ -22,6 +52,7 @@
                 <th>Data</th>
                 <th>Custo (R$)</th>
                 <th>Tipo</th>
+                <th>Status</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -34,6 +65,7 @@
                 <td>{{ receita['data_registro'] }}</td>
                 <td>{{ '%.2f'|format(receita['custo']) }}</td>
                 <td>{{ receita['tipo_receita'] }}</td>
+                <td>{{ receita['status'] }}</td>
                 <td class="acoes">
                     <a href="{{ url_for('editar_receita', id=receita['id']) }}">Editar</a>
                     <form action="{{ url_for('excluir_receita', id=receita['id']) }}" method="post" onsubmit="return confirm('Deseja excluir esta receita?');">
