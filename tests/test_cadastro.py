@@ -1,5 +1,6 @@
 import sqlite3
 import app as app_module
+from unittest.mock import patch
 
 
 def contar_receitas():
@@ -275,3 +276,53 @@ def test_edicao_altera_status_no_banco():
 
     assert registro is not None
     assert registro[0] == "inativa"
+
+@patch("app.enviar_email")
+def test_cadastro_chama_envio_de_email(mock_enviar_email):
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    client.post(
+        "/receitas/nova",
+        data={
+            "nome": "Email Cadastro",
+            "descricao": "Teste de mock",
+            "data_registro": "2026-04-26",
+            "custo": "14.00",
+            "tipo_receita": "doce",
+            "status": "ativa",
+        },
+        follow_redirects=False
+    )
+
+    assert mock_enviar_email.called
+
+@patch("app.enviar_email")
+def test_edicao_chama_envio_de_email(mock_enviar_email):
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    client.post(
+        "/receitas/editar/1",
+        data={
+            "nome": "Brigadeiro Tradicional",
+            "descricao": "Doce de leite condensado, chocolate em pó e granulado.",
+            "data_registro": "2026-03-31",
+            "custo": "18.50",
+            "tipo_receita": "doce",
+            "status": "ativa",
+        },
+        follow_redirects=False
+    )
+
+    assert mock_enviar_email.called
