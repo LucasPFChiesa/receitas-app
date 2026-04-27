@@ -212,3 +212,66 @@ def test_exclusao_redireciona_para_listagem():
 
     assert resposta.status_code == 302
     assert "/receitas" in resposta.headers["Location"]
+
+def test_cadastro_salva_status_correto_no_banco():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    client.post(
+        "/receitas/nova",
+        data={
+            "nome": "Status Teste",
+            "descricao": "Receita para validar status",
+            "data_registro": "2026-04-26",
+            "custo": "11.00",
+            "tipo_receita": "doce",
+            "status": "inativa",
+        },
+        follow_redirects=False
+    )
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    registro = conn.execute(
+        "SELECT status FROM receita WHERE nome = ?",
+        ("Status Teste",)
+    ).fetchone()
+    conn.close()
+
+    assert registro is not None
+    assert registro[0] == "inativa"
+
+def test_edicao_altera_status_no_banco():
+    client = app_module.app.test_client()
+
+    client.post(
+        "/login",
+        data={"login": "admin", "senha": "admin123"},
+        follow_redirects=False
+    )
+
+    client.post(
+        "/receitas/editar/1",
+        data={
+            "nome": "Brigadeiro Tradicional",
+            "descricao": "Doce de leite condensado, chocolate em pó e granulado.",
+            "data_registro": "2026-03-31",
+            "custo": "18.50",
+            "tipo_receita": "doce",
+            "status": "inativa",
+        },
+        follow_redirects=False
+    )
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    registro = conn.execute(
+        "SELECT status FROM receita WHERE id = 1"
+    ).fetchone()
+    conn.close()
+
+    assert registro is not None
+    assert registro[0] == "inativa"
