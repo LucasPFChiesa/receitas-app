@@ -1,6 +1,6 @@
 import sqlite3
-import app as app_module
 from unittest.mock import patch
+import app as app_module
 
 
 def contar_receitas():
@@ -38,6 +38,7 @@ def test_cadastro_aumenta_quantidade_de_receitas():
 
     assert depois == antes + 1
 
+
 def test_cadastro_salva_nome_correto_no_banco():
     client = app_module.app.test_client()
 
@@ -70,6 +71,7 @@ def test_cadastro_salva_nome_correto_no_banco():
     assert registro is not None
     assert registro[0] == "Quindim Teste"
 
+
 def test_cadastro_redireciona_para_listagem():
     client = app_module.app.test_client()
 
@@ -95,6 +97,7 @@ def test_cadastro_redireciona_para_listagem():
     assert resposta.status_code == 302
     assert "/receitas" in resposta.headers["Location"]
 
+
 def test_cadastro_exibe_nova_receita_na_listagem():
     client = app_module.app.test_client()
 
@@ -119,6 +122,7 @@ def test_cadastro_exibe_nova_receita_na_listagem():
 
     assert resposta.status_code == 200
     assert b"canjica teste" in resposta.data.lower()
+
 
 def test_edicao_altera_nome_no_banco():
     client = app_module.app.test_client()
@@ -151,6 +155,7 @@ def test_edicao_altera_nome_no_banco():
     assert resposta.status_code == 302
     assert registro[0] == "Brigadeiro Editado"
 
+
 def test_edicao_de_id_inexistente_nao_altera_lista():
     client = app_module.app.test_client()
 
@@ -176,6 +181,7 @@ def test_edicao_de_id_inexistente_nao_altera_lista():
     assert resposta.status_code == 200
     assert b"receita n\xc3\xa3o encontrada" in resposta.data.lower()
 
+
 def test_exclusao_remove_receita_do_banco():
     client = app_module.app.test_client()
 
@@ -200,6 +206,7 @@ def test_exclusao_remove_receita_do_banco():
     assert depois == antes - 1
     assert registro is None
 
+
 def test_exclusao_redireciona_para_listagem():
     client = app_module.app.test_client()
 
@@ -213,6 +220,7 @@ def test_exclusao_redireciona_para_listagem():
 
     assert resposta.status_code == 302
     assert "/receitas" in resposta.headers["Location"]
+
 
 def test_cadastro_salva_status_correto_no_banco():
     client = app_module.app.test_client()
@@ -246,6 +254,7 @@ def test_cadastro_salva_status_correto_no_banco():
     assert registro is not None
     assert registro[0] == "inativa"
 
+
 def test_edicao_altera_status_no_banco():
     client = app_module.app.test_client()
 
@@ -276,6 +285,7 @@ def test_edicao_altera_status_no_banco():
 
     assert registro is not None
     assert registro[0] == "inativa"
+
 
 @patch("app.enviar_email")
 def test_cadastro_chama_envio_de_email(mock_enviar_email):
@@ -302,6 +312,7 @@ def test_cadastro_chama_envio_de_email(mock_enviar_email):
 
     assert mock_enviar_email.called
 
+
 @patch("app.enviar_email")
 def test_edicao_chama_envio_de_email(mock_enviar_email):
     client = app_module.app.test_client()
@@ -326,67 +337,3 @@ def test_edicao_chama_envio_de_email(mock_enviar_email):
     )
 
     assert mock_enviar_email.called
-
-def test_cadastro_salva_status_correto_no_banco():
-    client = app_module.app.test_client()
-
-    client.post(
-        "/login",
-        data={"login": "admin", "senha": "admin123"},
-        follow_redirects=False
-    )
-
-    client.post(
-        "/receitas/nova",
-        data={
-            "nome": "Status Teste",
-            "descricao": "Receita para validar status",
-            "data_registro": "2026-04-26",
-            "custo": "11.00",
-            "tipo_receita": "doce",
-            "status": "inativa",
-        },
-        follow_redirects=False
-    )
-
-    conn = sqlite3.connect(app_module.DB_PATH)
-    registro = conn.execute(
-        "SELECT status FROM receita WHERE nome = ?",
-        ("Status Teste",)
-    ).fetchone()
-    conn.close()
-
-    assert registro is not None
-    assert registro[0] == "inativa"
-
-
-def test_edicao_altera_status_no_banco():
-    client = app_module.app.test_client()
-
-    client.post(
-        "/login",
-        data={"login": "admin", "senha": "admin123"},
-        follow_redirects=False
-    )
-
-    client.post(
-        "/receitas/editar/1",
-        data={
-            "nome": "Brigadeiro Tradicional",
-            "descricao": "Doce de leite condensado, chocolate em pó e granulado.",
-            "data_registro": "2026-03-31",
-            "custo": "18.50",
-            "tipo_receita": "doce",
-            "status": "inativa",
-        },
-        follow_redirects=False
-    )
-
-    conn = sqlite3.connect(app_module.DB_PATH)
-    registro = conn.execute(
-        "SELECT status FROM receita WHERE id = 1"
-    ).fetchone()
-    conn.close()
-
-    assert registro is not None
-    assert registro[0] == "inativa"
