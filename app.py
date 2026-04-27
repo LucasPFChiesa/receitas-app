@@ -35,11 +35,36 @@ def enviar_email(assunto, mensagem, destinatario=None):
     msg['From'] = remetente
     msg['To'] = destino
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
-        servidor.starttls()
-        servidor.login(remetente, senha)
-        servidor.send_message(msg)
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
+            servidor.starttls()
+            servidor.login(remetente, senha)
+            servidor.send_message(msg)
+        print('E-mail enviado com sucesso.')
+    except Exception as e:
+        print(f'Falha ao enviar e-mail: {e}')
 
+    remetente = os.getenv('EMAIL_REMETENTE')
+    senha = os.getenv('EMAIL_SENHA')
+    destino = destinatario or os.getenv('EMAIL_DESTINO')
+
+    if not remetente or not senha or not destino:
+        print('E-mail não enviado: variáveis EMAIL_REMETENTE, EMAIL_SENHA ou EMAIL_DESTINO não configuradas.')
+        return
+
+    msg = MIMEText(mensagem, 'plain', 'utf-8')
+    msg['Subject'] = assunto
+    msg['From'] = remetente
+    msg['To'] = destino
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
+            servidor.starttls()
+            servidor.login(remetente, senha)
+            servidor.send_message(msg)
+        print('E-mail enviado com sucesso.')
+    except Exception as e:
+        print(f'Falha ao enviar e-mail: {e}')
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
