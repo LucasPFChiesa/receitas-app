@@ -44,3 +44,15 @@ def test_login_valido_grava_dados_na_sessao():
 
         assert "usuario_id" in session
         assert session["usuario_nome"] == "Administrador"
+
+def test_login_invalido_exibe_mensagem_de_erro():
+    client = app.test_client()
+
+    resposta = client.post(
+        "/login",
+        data={"login": "admin", "senha": "errada"},
+        follow_redirects=True
+    )
+
+    assert resposta.status_code == 200
+    assert b"inv" in resposta.data.lower()
