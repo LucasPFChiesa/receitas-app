@@ -22,57 +22,23 @@ ssh univates@177.44.248.83
 cd ~/receitas-app
 ```
 
-## 2. Instalar dependências da VM
+## 2. Preparar VM limpa
 
-Execute na VM:
-
-```bash
-sudo apt update
-sudo apt install -y git docker.io docker-compose curl
-sudo systemctl enable --now docker
-sudo usermod -aG docker univates
-```
-
-Depois saia e entre novamente no SSH para o grupo `docker` valer:
+Em uma VM limpa, execute:
 
 ```bash
-exit
-ssh univates@177.44.248.83
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+chmod +x preparar_vm.sh
+./preparar_vm.sh
 ```
 
-Teste:
+Esse script:
 
-```bash
-docker --version
-docker-compose --version
-```
-
-## 3. Configurar runner do GitHub Actions na VM
-
-O deploy automático usa um self-hosted runner do GitHub Actions rodando na própria VM. Assim, o GitHub executa a etapa de deploy dentro da VM, sem precisar abrir SSH do GitHub para a máquina.
-
-No GitHub, acesse:
-
-```text
-Settings > Actions > Runners > New self-hosted runner
-```
-
-Escolha Linux x64 e copie o token de configuração exibido pelo GitHub.
-
-Na VM, dentro do projeto:
-
-```bash
-cd ~/receitas-app
-RUNNER_TOKEN=TOKEN_COPIADO_DO_GITHUB scripts/instalar_runner_github.sh
-```
-
-Depois disso, o runner deve aparecer como online no GitHub.
-
-O caminho usado pelo deploy na VM será:
-
-```bash
-~/receitas-app
-```
+- instala Git, Docker e Docker Compose;
+- clona a branch `configurando-com-docker`;
+- deixa o projeto em `~/receitas-app`;
+- prepara as imagens Docker;
+- não inicia nenhum container.
 
 A pasta da VM deve ter estes arquivos:
 
@@ -84,7 +50,7 @@ A pasta da VM deve ter estes arquivos:
 - `requirements-dev.txt`
 - `scripts/docker-compose.sh`
 
-## 4. Testar homologacao manualmente
+## 3. Testar homologacao
 
 Na VM:
 
@@ -106,7 +72,7 @@ Teste pelo terminal da VM:
 curl http://localhost:5001/login
 ```
 
-## 5. Testar producao manualmente
+## 4. Testar producao
 
 Na VM:
 
@@ -122,7 +88,7 @@ Produção:
 http://177.44.248.83:5000
 ```
 
-## 6. Integração e deploy no GitHub Actions
+## 5. Integração no GitHub Actions
 
 A integração roda automaticamente no GitHub quando você envia código:
 
@@ -135,15 +101,7 @@ Ela executa:
 1. Linter com `pyflakes`.
 2. Mess detector com `radon`.
 3. Testes com `pytest`.
-
-Quando o push é feito na branch `configurando-com-docker`, o GitHub Actions:
-
-1. Executa linter, mess detector, testes e build Docker.
-2. Executa o job de deploy no runner da VM.
-3. Atualiza o projeto em `~/receitas-app`.
-4. Atualiza o container de homologação.
-
-A produção não atualiza automaticamente. Para atualizar produção, use o botão `Run workflow` no GitHub Actions e escolha o ambiente `producao`.
+4. Build Docker.
 
 Para atualizar homologação manualmente pela VM:
 
@@ -152,7 +110,7 @@ cd ~/receitas-app
 scripts/atualizar_homologacao.sh
 ```
 
-## 7. Resultado esperado
+## 6. Resultado esperado
 
 O GitHub Actions deve executar:
 
@@ -163,16 +121,15 @@ O GitHub Actions deve executar:
 5. Rodar `radon` como mess detector.
 6. Rodar `pytest`.
 7. Validar o build da imagem Docker.
-8. Atualizar homologação automaticamente na branch `configurando-com-docker`.
 
-## 8. Portas usadas
+## 7. Portas usadas
 
 - Homologação: `5001`
 - Produção: `5000`
 
 Se a VM tiver firewall ou regra de nuvem, libere essas portas.
 
-## 9. Scripts prontos para apresentacao
+## 8. Scripts prontos para apresentacao
 
 Dentro da VM, na pasta do projeto:
 

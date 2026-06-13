@@ -24,7 +24,6 @@ GitHub
   | - mess detector
   | - testes
   | - build Docker
-  | - deploy automatico em homologacao no runner da VM
   v
 VM 177.44.248.83
   |
@@ -130,7 +129,8 @@ Etapas:
 3. Executa mess detector com `radon`.
 4. Executa testes com `pytest`.
 5. Valida o build Docker.
-6. Atualiza homologação automaticamente na branch `configurando-com-docker`, usando o self-hosted runner da VM.
+
+Na VM, a preparação inicial é feita por um script único. Depois disso, homologação e produção são controladas por scripts separados.
 
 Produção é atualizada apenas por execução manual do workflow no GitHub Actions.
 
@@ -150,9 +150,17 @@ git commit -m "Mensagem da alteracao"
 git push
 ```
 
-Após o push, o GitHub Actions valida o projeto e atualiza homologação.
+Após o push, o GitHub Actions valida o projeto.
 
-Para produção, usar `Run workflow` no GitHub Actions e selecionar `producao`.
+Na VM limpa, preparar o projeto:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+chmod +x preparar_vm.sh
+./preparar_vm.sh
+```
+
+Depois, subir homologação ou produção com os scripts próprios.
 
 ## Scripts da VM
 

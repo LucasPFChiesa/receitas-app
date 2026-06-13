@@ -57,8 +57,8 @@ Fluxo usado no trabalho:
 3. A integração, usando GitHub Actions, valida o repositório no GitHub.
 4. A integração instala dependências, executa linter, mess detector e testes.
 5. Se tudo passar, a integração valida o build Docker.
-6. Na branch `configurando-com-docker`, a homologação é atualizada automaticamente na VM.
-7. A produção só é atualizada manualmente pelo GitHub Actions.
+6. A VM é preparada com um script único.
+7. Homologação e produção são iniciadas por scripts separados.
 
 Arquivos principais desse fluxo:
 
@@ -93,7 +93,6 @@ Ela executa:
 - Mess detector com `radon`
 - Testes com `pytest`
 - Build Docker
-- Deploy automático em homologação pelo self-hosted runner da VM na branch `configurando-com-docker`
 
 Página da integração:
 
@@ -107,6 +106,14 @@ Os comandos principais ficam na pasta `scripts/`.
 
 ```bash
 cd ~/receitas-app
+```
+
+Preparar uma VM limpa:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+chmod +x preparar_vm.sh
+./preparar_vm.sh
 ```
 
 Limpar Docker:

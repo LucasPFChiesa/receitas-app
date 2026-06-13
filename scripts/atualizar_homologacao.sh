@@ -3,6 +3,9 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+echo "Atualizando codigo..."
+git pull
+
 echo "Atualizando container de homologacao..."
 sh scripts/docker-compose.sh -f docker-compose.vm.yml up -d --build homolog
 
