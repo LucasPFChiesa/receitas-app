@@ -93,7 +93,7 @@ Ela executa:
 - Mess detector com `radon`
 - Testes com `pytest`
 - Build Docker
-- Deploy automático em homologação na branch `configurando-com-docker`
+- Deploy automático em homologação pelo self-hosted runner da VM na branch `configurando-com-docker`
 
 Página da integração:
 

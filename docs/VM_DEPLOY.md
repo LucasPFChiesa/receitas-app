@@ -47,43 +47,28 @@ docker --version
 docker-compose --version
 ```
 
-## 3. Configurar deploy automatico no GitHub
+## 3. Configurar runner do GitHub Actions na VM
 
-O GitHub Actions usa SSH para enviar o projeto para a VM e atualizar os containers.
+O deploy automático usa um self-hosted runner do GitHub Actions rodando na própria VM. Assim, o GitHub executa a etapa de deploy dentro da VM, sem precisar abrir SSH do GitHub para a máquina.
 
-Crie uma chave SSH no seu PC:
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/receitas_actions -C "receitas-actions"
-```
-
-Copie a chave publica para a VM:
-
-```bash
-ssh-copy-id -i ~/.ssh/receitas_actions.pub univates@177.44.248.83
-```
-
-No GitHub, entre no repositório e acesse:
+No GitHub, acesse:
 
 ```text
-Settings > Secrets and variables > Actions > New repository secret
+Settings > Actions > Runners > New self-hosted runner
 ```
 
-Cadastre estes secrets:
+Escolha Linux x64 e copie o token de configuração exibido pelo GitHub.
 
-```text
-VM_HOST=177.44.248.83
-VM_USER=univates
-VM_SSH_KEY=conteudo da chave privada ~/.ssh/receitas_actions
-```
-
-Para copiar o conteúdo da chave privada:
+Na VM, dentro do projeto:
 
 ```bash
-cat ~/.ssh/receitas_actions
+cd ~/receitas-app
+RUNNER_TOKEN=TOKEN_COPIADO_DO_GITHUB scripts/instalar_runner_github.sh
 ```
 
-Na VM, o caminho usado pelo deploy será:
+Depois disso, o runner deve aparecer como online no GitHub.
+
+O caminho usado pelo deploy na VM será:
 
 ```bash
 ~/receitas-app
@@ -154,8 +139,9 @@ Ela executa:
 Quando o push é feito na branch `configurando-com-docker`, o GitHub Actions:
 
 1. Executa linter, mess detector, testes e build Docker.
-2. Envia o projeto para `~/receitas-app` na VM.
-3. Atualiza o container de homologação.
+2. Executa o job de deploy no runner da VM.
+3. Atualiza o projeto em `~/receitas-app`.
+4. Atualiza o container de homologação.
 
 A produção não atualiza automaticamente. Para atualizar produção, use o botão `Run workflow` no GitHub Actions e escolha o ambiente `producao`.
 

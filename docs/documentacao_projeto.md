@@ -24,7 +24,7 @@ GitHub
   | - mess detector
   | - testes
   | - build Docker
-  | - deploy automatico em homologacao
+  | - deploy automatico em homologacao no runner da VM
   v
 VM 177.44.248.83
   |
@@ -130,7 +130,7 @@ Etapas:
 3. Executa mess detector com `radon`.
 4. Executa testes com `pytest`.
 5. Valida o build Docker.
-6. Atualiza homologação automaticamente na branch `configurando-com-docker`.
+6. Atualiza homologação automaticamente na branch `configurando-com-docker`, usando o self-hosted runner da VM.
 
 Produção é atualizada apenas por execução manual do workflow no GitHub Actions.
 

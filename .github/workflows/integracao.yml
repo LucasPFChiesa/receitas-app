@@ -50,7 +50,7 @@ jobs:
 
   deploy-homologacao:
     name: Atualizar homologacao
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: linter-messdetector-testes
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/configurando-com-docker') ||
@@ -60,21 +60,7 @@ jobs:
       - name: Baixar codigo
         uses: actions/checkout@v4
 
-      - name: Configurar SSH
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-        run: |
-          test -n "$VM_HOST"
-          test -n "$VM_SSH_KEY"
-          mkdir -p ~/.ssh
-          printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-
-      - name: Enviar projeto para VM
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
+      - name: Atualizar pasta da aplicacao
         run: |
           tar \
             --exclude='.git' \
@@ -84,29 +70,21 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=30 /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
-            rm -rf ~/receitas-app.new &&
-            mkdir -p ~/receitas-app.new &&
-            tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
-            rm -rf ~/receitas-app &&
-            mv ~/receitas-app.new ~/receitas-app &&
-            chmod +x ~/receitas-app/docker-entrypoint.sh ~/receitas-app/scripts/*.sh
-          '
+          rm -rf ~/receitas-app.new
+          mkdir -p ~/receitas-app.new
+          tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new
+          rm -rf ~/receitas-app
+          mv ~/receitas-app.new ~/receitas-app
+          chmod +x ~/receitas-app/docker-entrypoint.sh ~/receitas-app/scripts/*.sh
 
       - name: Subir homologacao
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
-            cd ~/receitas-app &&
-            sh scripts/subir_homologacao.sh
-          '
+          cd ~/receitas-app
+          sh scripts/subir_homologacao.sh
 
   deploy-producao:
     name: Atualizar producao
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: linter-messdetector-testes
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.ambiente == 'producao'
 
@@ -114,21 +92,7 @@ jobs:
       - name: Baixar codigo
         uses: actions/checkout@v4
 
-      - name: Configurar SSH
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-        run: |
-          test -n "$VM_HOST"
-          test -n "$VM_SSH_KEY"
-          mkdir -p ~/.ssh
-          printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-
-      - name: Enviar projeto para VM
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
+      - name: Atualizar pasta da aplicacao
         run: |
           tar \
             --exclude='.git' \
@@ -138,22 +102,14 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=30 /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
-            rm -rf ~/receitas-app.new &&
-            mkdir -p ~/receitas-app.new &&
-            tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
-            rm -rf ~/receitas-app &&
-            mv ~/receitas-app.new ~/receitas-app &&
-            chmod +x ~/receitas-app/docker-entrypoint.sh ~/receitas-app/scripts/*.sh
-          '
+          rm -rf ~/receitas-app.new
+          mkdir -p ~/receitas-app.new
+          tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new
+          rm -rf ~/receitas-app
+          mv ~/receitas-app.new ~/receitas-app
+          chmod +x ~/receitas-app/docker-entrypoint.sh ~/receitas-app/scripts/*.sh
 
       - name: Subir producao
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
-            cd ~/receitas-app &&
-            sh scripts/subir_producao.sh
-          '
+          cd ~/receitas-app
+          sh scripts/subir_producao.sh
