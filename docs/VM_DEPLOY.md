@@ -24,7 +24,7 @@ cd ~/receitas-app
 
 ## 2. Preparar VM limpa
 
-Em uma VM limpa, primeiro configure o token do GitHub como credencial geral do usuário. O token precisa ter acesso ao repositório e permissão `Contents: Read and write`.
+Em uma VM limpa, o token do GitHub deve ficar como credencial geral do usuário, fora da pasta do projeto. O token precisa ter acesso ao repositório e permissão `Contents: Read and write`.
 
 ```bash
 printf "Token GitHub: "
@@ -44,6 +44,8 @@ curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubuserconten
 chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
+
+Se o arquivo `preparar_vm.sh` já estiver na VM, basta executar `./preparar_vm.sh`. Caso a credencial ainda não exista, o próprio script vai pedir o token e gravar em `~/.git-credentials`.
 
 Esse script:
 

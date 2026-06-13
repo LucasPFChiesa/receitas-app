@@ -138,7 +138,7 @@ scripts/subir_producao.sh
 scripts/status.sh
 ```
 
-Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub e a homologação é atualizada automaticamente.
+Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub. Depois disso, a homologação só muda quando o script de atualização for executado na VM.
 
 Para atualizar homologação manualmente pela VM:
 
@@ -146,7 +146,7 @@ Para atualizar homologação manualmente pela VM:
 scripts/atualizar_homologacao.sh
 ```
 
-A produção só muda pelo workflow manual do GitHub Actions ou pelo script `scripts/atualizar_producao.sh`.
+A produção só muda quando o script `scripts/atualizar_producao.sh` for executado na VM.
 
 Para derrubar os ambientes:
 

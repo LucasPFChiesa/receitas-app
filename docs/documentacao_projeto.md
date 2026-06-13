@@ -152,7 +152,7 @@ git push
 
 Após o push, o GitHub Actions valida o projeto.
 
-Na VM limpa, preparar o projeto:
+Na VM limpa, o token do GitHub fica como credencial geral do usuário, fora do projeto. Para baixar o script e preparar o projeto:
 
 ```bash
 printf "Token GitHub: "
@@ -167,6 +167,8 @@ curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubuserconten
 chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
+
+Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`. Se a credencial ainda não existir, o script pede o token e grava em `~/.git-credentials`.
 
 Depois, subir homologação ou produção com os scripts próprios.
 
