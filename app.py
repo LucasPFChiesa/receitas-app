@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv('DATABASE_PATH', BASE_DIR / 'receitas.db'))
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'troque-esta-chave-em-producao')
+app.secret_key = 'troque-esta-chave-em-producao'
 
 
 def get_db_connection():

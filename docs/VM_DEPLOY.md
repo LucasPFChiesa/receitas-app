@@ -1,22 +1,25 @@
 # Deploy na VM
 
-Esta VM concentra os ambientes do desenho:
+Esta VM concentra os ambientes de execução do desenho:
 
-- Integração: Jenkins rodando na própria VM.
 - Homologação: container `receitas_app_homolog`.
 - Produção: container `receitas_app_prod`.
+
+A integração principal fica no GitHub Actions:
+
+- https://github.com/LucasPFChiesa/receitas-app/actions
 
 Dados da VM mostrada:
 
 - IP: `177.44.248.83`
 - Usuário SSH: `univates`
-- Pasta do projeto: `/home/univates/projeto/receitas-app`
+- Pasta do projeto: `/home/univates/receitas-app`
 
 ## 1. Acessar a VM
 
 ```bash
 ssh univates@177.44.248.83
-cd ~/projeto/receitas-app
+cd ~/receitas-app
 ```
 
 ## 2. Instalar dependências da VM
@@ -25,7 +28,7 @@ Execute na VM:
 
 ```bash
 sudo apt update
-sudo apt install -y git python3 python3-venv python3-pip docker.io docker-compose curl
+sudo apt install -y git docker.io docker-compose curl
 sudo systemctl enable --now docker
 sudo usermod -aG docker univates
 ```
@@ -44,28 +47,19 @@ docker --version
 docker-compose --version
 ```
 
-## 3. Enviar as alteracoes novas para a VM
+## 3. Enviar o projeto para a VM
 
-O projeto local precisa ir para o GitHub primeiro:
-
-```bash
-git add .
-git commit -m "Configura pipeline Jenkins e Docker"
-git push
-```
-
-Na VM, atualize o projeto:
+O projeto pode ser copiado direto do PC para a VM. Na VM, o caminho usado será:
 
 ```bash
-cd ~/projeto/receitas-app
-git pull
+~/receitas-app
 ```
 
-Depois do `git pull`, a VM deve ter estes arquivos novos:
+A pasta da VM deve ter estes arquivos:
 
 - `Dockerfile`
 - `docker-compose.yml`
-- `Jenkinsfile`
+- `docker-compose.vm.yml`
 - `.dockerignore`
 - `docker-entrypoint.sh`
 - `requirements-dev.txt`
@@ -76,9 +70,9 @@ Depois do `git pull`, a VM deve ter estes arquivos novos:
 Na VM:
 
 ```bash
-cd ~/projeto/receitas-app
-docker-compose up -d homolog
-docker-compose ps
+cd ~/receitas-app
+sh scripts/subir_homologacao.sh
+sh scripts/status.sh
 ```
 
 Homologação:
@@ -98,9 +92,9 @@ curl http://localhost:5001/login
 Na VM:
 
 ```bash
-cd ~/projeto/receitas-app
-docker-compose --profile prod up -d prod
-docker-compose ps
+cd ~/receitas-app
+sh scripts/subir_producao.sh
+sh scripts/status.sh
 ```
 
 Produção:
@@ -109,54 +103,30 @@ Produção:
 http://177.44.248.83:5000
 ```
 
-## 6. Instalar Jenkins
+## 6. Integração no GitHub Actions
 
-Se o Jenkins ainda não estiver instalado, execute na VM:
-
-```bash
-sudo apt install -y fontconfig openjdk-17-jre
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt update
-sudo apt install -y jenkins
-sudo systemctl enable --now jenkins
-```
-
-Acesse:
-
-```text
-http://177.44.248.83:8080
-```
-
-Senha inicial:
+A integração roda automaticamente no GitHub quando você envia código:
 
 ```bash
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+git push
 ```
 
-Permitir que o Jenkins use Docker:
+Ela executa:
+
+1. Linter com `pyflakes`.
+2. Mess detector com `radon`.
+3. Testes com `pytest`.
+
+Depois de a integração passar, atualize a homologação na VM:
 
 ```bash
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
+cd ~/receitas-app
+scripts/atualizar_homologacao.sh
 ```
 
-## 7. Criar job Pipeline no Jenkins
+## 7. Resultado esperado
 
-No Jenkins:
-
-1. Clique em `New Item`.
-2. Escolha `Pipeline`.
-3. Em `Pipeline`, selecione `Pipeline script from SCM`.
-4. SCM: `Git`.
-5. Repository URL: URL do repositório GitHub.
-6. Branch: `*/main`.
-7. Script Path: `Jenkinsfile`.
-8. Salve e execute `Build Now`.
-
-## 8. Resultado esperado
-
-O Jenkins deve executar:
+O GitHub Actions deve executar:
 
 1. Buscar código no GitHub.
 2. Criar ambiente Python.
@@ -164,24 +134,22 @@ O Jenkins deve executar:
 4. Rodar `pyflakes`.
 5. Rodar `radon` como mess detector.
 6. Rodar `pytest`.
-7. Criar imagem Docker.
-8. Subir homologação em `5001`.
-9. Se estiver na branch `main`, subir produção em `5000`.
+7. Validar o build da imagem Docker.
+8. Liberar o código para ser atualizado em homologação.
 
-## 9. Portas usadas
+## 8. Portas usadas
 
-- Jenkins: `8080`
 - Homologação: `5001`
 - Produção: `5000`
 
 Se a VM tiver firewall ou regra de nuvem, libere essas portas.
 
-## 10. Scripts prontos para apresentacao
+## 9. Scripts prontos para apresentacao
 
 Dentro da VM, na pasta do projeto:
 
 ```bash
-cd ~/projeto/receitas-app
+cd ~/receitas-app
 ```
 
 Limpar Docker como o professor pediu:
@@ -190,20 +158,32 @@ Limpar Docker como o professor pediu:
 scripts/clean_docker_images.sh
 ```
 
-Rodar a demonstracao completa:
+Subir homologação:
 
 ```bash
-scripts/07_demo_reset_and_deploy.sh
+scripts/subir_homologacao.sh
+```
+
+Subir produção:
+
+```bash
+scripts/subir_producao.sh
+```
+
+Depois de alterar algo e enviar para o GitHub, atualizar somente homologação:
+
+```bash
+scripts/atualizar_homologacao.sh
+```
+
+Produção só será atualizada se este comando for executado:
+
+```bash
+scripts/atualizar_producao.sh
 ```
 
 Ver status:
 
 ```bash
-scripts/05_status.sh
-```
-
-Testar URLs:
-
-```bash
-scripts/06_test_urls.sh
+scripts/status.sh
 ```

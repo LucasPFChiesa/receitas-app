@@ -3,20 +3,16 @@
 Aplicação web simples em Flask + SQLite para cadastro, login, listagem e CRUD de receitas doces e salgadas.
 
 ## Requisitos
-- Python 3
-- pip
+- Docker
+- Docker Compose
 
 ## Como executar localmente
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python init_db.py
-python app.py
+sh scripts/docker-compose.sh up -d dev
 ```
 
 A aplicação ficará disponível em:
-- http://127.0.0.1:5000
+- http://localhost:5002
 
 ## Credenciais padrão
 - Login: `admin`
@@ -50,33 +46,34 @@ A aplicação ficará disponível em:
 - CSS
 - Jinja2
 - Docker
-- Jenkins
+- Integração com GitHub Actions
 
-## Pipeline CI/CD
+## Fluxo do Projeto
 
-O fluxo esperado do projeto é:
+Fluxo usado no trabalho:
 
 1. Desenvolver no computador local.
 2. Enviar as alterações para o GitHub.
-3. O Jenkins, em uma máquina virtual acessada via SSH, busca o repositório.
-4. O Jenkins instala dependências, executa linter e testes.
-5. Se tudo passar, o Jenkins cria a imagem Docker.
-6. A aplicação sobe primeiro em homologação.
-7. Na branch `main`, a mesma imagem pode ser promovida para produção.
+3. A integração, usando GitHub Actions, valida o repositório no GitHub.
+4. A integração instala dependências, executa linter, mess detector e testes.
+5. Se tudo passar, a integração valida o build Docker.
+6. O projeto é enviado para a VM e o container de homologação é atualizado.
+7. A produção só é atualizada manualmente.
 
-Arquivos criados para esse fluxo:
+Arquivos principais desse fluxo:
 
-- `Jenkinsfile`: pipeline com checkout, lint, testes, build Docker, deploy em homologação e deploy em produção.
+- `.github/workflows/integracao.yml`: pipeline com linter, mess detector e testes.
 - `Dockerfile`: imagem da aplicação Flask usando Gunicorn.
-- `docker-compose.yml`: serviços `homolog` e `prod` em containers separados.
+- `docker-compose.yml`: ambiente de desenvolvimento local.
+- `docker-compose.vm.yml`: ambientes de homologação e produção na VM.
 - `docker-entrypoint.sh`: cria o banco SQLite automaticamente se ele ainda não existir.
-- `requirements-dev.txt`: dependências usadas no Jenkins para testes e linter.
+- `requirements-dev.txt`: dependências usadas na integração para testes, linter e mess detector.
 
 ## Como rodar com Docker
 
 Ambiente de desenvolvimento no seu PC:
 ```bash
-scripts/00_dev_up.sh
+sh scripts/docker-compose.sh up -d dev
 ```
 
 A aplicação de desenvolvimento fica disponível em:
@@ -84,79 +81,60 @@ A aplicação de desenvolvimento fica disponível em:
 
 Você continua editando os arquivos normalmente no VS Code. O container `dev` usa volume `.:/app`, então as alterações feitas no PC aparecem dentro do container.
 
-Build da imagem:
-```bash
-docker build -t receitas-app:latest .
-```
+Homologação e produção não são executadas no PC. Elas usam `docker-compose.vm.yml` e ficam apenas na VM.
 
-Subir homologação:
-```bash
-docker-compose up -d homolog
-```
+## Integração
 
-A homologação fica disponível em:
-- http://localhost:5001
+A integração roda no GitHub Actions sempre que houver `push` ou `pull_request`.
 
-Subir produção:
-```bash
-docker-compose --profile prod up -d prod
-```
+Ela executa:
 
-A produção fica disponível em:
-- http://localhost:5000
+- Linter com `pyflakes`
+- Mess detector com `radon`
+- Testes com `pytest`
 
-## Jenkins na máquina virtual
+Página da integração:
 
-Na VM, instale:
-
-- Git
-- Python 3 e `venv`
-- Docker
-- Docker Compose
-- Jenkins
-
-Depois, crie um job Pipeline no Jenkins apontando para o repositório do GitHub. O Jenkins usará o `Jenkinsfile` automaticamente.
+- https://github.com/LucasPFChiesa/receitas-app/actions
 
 O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
-## Scripts para apresentação
+## Scripts da VM
 
-Os comandos principais da apresentação estão na pasta `scripts/`.
-
-Para desenvolver no PC usando container:
+Os comandos principais ficam na pasta `scripts/`.
 
 ```bash
-scripts/00_dev_up.sh
-scripts/00_dev_logs.sh
-scripts/00_dev_down.sh
+cd ~/receitas-app
 ```
 
-Para rodar lint, mess detector e testes usando Docker:
+Limpar Docker:
 
 ```bash
-scripts/02_run_checks_docker.sh
-```
-
-Sequência sugerida para demonstrar do zero na VM:
-
-```bash
-cd ~/projeto/receitas-app
 scripts/clean_docker_images.sh
-scripts/02_run_checks_docker.sh
-docker build -t receitas-app:latest .
-scripts/03_deploy_homolog.sh
-scripts/04_deploy_prod.sh
-scripts/05_status.sh
-scripts/06_test_urls.sh
 ```
 
-Para rodar essa sequência automaticamente:
+Subir ambientes:
 
 ```bash
-scripts/07_demo_reset_and_deploy.sh
+scripts/subir_homologacao.sh
+scripts/subir_producao.sh
+scripts/status.sh
 ```
 
-Mais detalhes estão em `scripts/README.md`.
+Se o professor pedir para alterar um caractere e atualizar apenas homologação:
+
+```bash
+scripts/atualizar_homologacao.sh
+```
+
+A produção só muda quando você rodar `scripts/atualizar_producao.sh`.
+
+Para derrubar os ambientes:
+
+```bash
+scripts/derrubar_homologacao.sh
+scripts/derrubar_producao.sh
+```
 
 ## Estrutura do banco de dados
 

@@ -1,6 +1,36 @@
-venv/
+# Python
 __pycache__/
 *.pyc
-receitas.db
-output.log
+*.pyo
+*.pyd
 
+# Testes e cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ambientes locais
+.env
+.env.*
+
+# Banco e arquivos gerados localmente
+receitas.db
+*.sqlite
+*.sqlite3
+*.db
+output.log
+*.log
+
+# Flask
+instance/
+
+# Editor e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build e pacotes
+build/
+dist/
+*.egg-info/

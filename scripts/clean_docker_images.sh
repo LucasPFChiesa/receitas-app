@@ -1,28 +1,13 @@
-#!/usr/bin/env bash
-set -e
+#! /bin/bash
 
-echo "Limpando containers, imagens, volumes nao usados e cache do Docker..."
+# parar todos os containers
+sudo docker stop $(sudo docker ps -a -q)
 
-containers="$(sudo docker ps -a -q)"
-if [ -n "$containers" ]; then
-    echo "Parando containers..."
-    sudo docker stop $containers
+# deletar todos os containers
+sudo docker rm $(sudo docker ps -a -q)
 
-    echo "Removendo containers..."
-    sudo docker rm $containers
-else
-    echo "Nenhum container encontrado."
-fi
+# deletar todas as imagens
+sudo docker rmi $(sudo docker images -a -q)
 
-images="$(sudo docker images -a -q)"
-if [ -n "$images" ]; then
-    echo "Removendo imagens..."
-    sudo docker rmi -f $images
-else
-    echo "Nenhuma imagem encontrada."
-fi
-
-echo "Removendo caches e recursos nao usados..."
-sudo docker system prune -a --volumes -f
-
-echo "Limpeza Docker concluida."
+# deletar: caches e builds - limpeza geral
+sudo docker system prune -a -f
