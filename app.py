@@ -10,10 +10,10 @@ import smtplib
 from email.mime.text import MIMEText
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / 'receitas.db'
+DB_PATH = Path(os.getenv('DATABASE_PATH', BASE_DIR / 'receitas.db'))
 
 app = Flask(__name__)
-app.secret_key = 'troque-esta-chave-em-producao'
+app.secret_key = os.getenv('SECRET_KEY', 'troque-esta-chave-em-producao')
 
 
 def get_db_connection():
@@ -21,13 +21,17 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def enviar_email(assunto, mensagem, destinatario=None):
     remetente = os.getenv('EMAIL_REMETENTE')
     senha = os.getenv('EMAIL_SENHA')
     destino = destinatario or os.getenv('EMAIL_DESTINO')
 
     if not remetente or not senha or not destino:
-        print('E-mail não enviado: variáveis EMAIL_REMETENTE, EMAIL_SENHA ou EMAIL_DESTINO não configuradas.')
+        print(
+            'E-mail não enviado: variáveis EMAIL_REMETENTE, EMAIL_SENHA '
+            'ou EMAIL_DESTINO não configuradas.'
+        )
         return
 
     msg = MIMEText(mensagem, 'plain', 'utf-8')
@@ -44,27 +48,7 @@ def enviar_email(assunto, mensagem, destinatario=None):
     except Exception as e:
         print(f'Falha ao enviar e-mail: {e}')
 
-    remetente = os.getenv('EMAIL_REMETENTE')
-    senha = os.getenv('EMAIL_SENHA')
-    destino = destinatario or os.getenv('EMAIL_DESTINO')
 
-    if not remetente or not senha or not destino:
-        print('E-mail não enviado: variáveis EMAIL_REMETENTE, EMAIL_SENHA ou EMAIL_DESTINO não configuradas.')
-        return
-
-    msg = MIMEText(mensagem, 'plain', 'utf-8')
-    msg['Subject'] = assunto
-    msg['From'] = remetente
-    msg['To'] = destino
-
-    try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
-            servidor.starttls()
-            servidor.login(remetente, senha)
-            servidor.send_message(msg)
-        print('E-mail enviado com sucesso.')
-    except Exception as e:
-        print(f'Falha ao enviar e-mail: {e}')
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
@@ -166,12 +150,14 @@ def nova_receita():
         )
         conn = get_db_connection()
         conn.execute(
-            'INSERT INTO receita (nome, descricao, data_registro, custo, tipo_receita, status) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO receita '
+            '(nome, descricao, data_registro, custo, tipo_receita, status) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
             dados,
         )
         conn.commit()
         conn.close()
-        
+
         enviar_email(
             'Receita cadastrada com sucesso',
             f'A receita "{dados[0]}" foi cadastrada no sistema com status "{dados[5]}".'
@@ -181,44 +167,6 @@ def nova_receita():
         return redirect(url_for('listar_receitas'))
     return render_template('form_receita.html', receita=None, acao='Nova Receita')
 
-    if request.method == 'POST':
-        dados = (
-            request.form['nome'].strip(),
-            request.form['descricao'].strip(),
-            request.form['data_registro'].strip(),
-            request.form['custo'].strip(),
-            request.form['tipo_receita'].strip().lower(),
-        )
-        conn = get_db_connection()
-        conn.execute(
-            'INSERT INTO receita (nome, descricao, data_registro, custo, tipo_receita) VALUES (?, ?, ?, ?, ?)',
-            dados,
-        )
-        conn.commit()
-        conn.close()
-        flash('Receita cadastrada com sucesso.', 'sucesso')
-        return redirect(url_for('listar_receitas'))
-    return render_template('form_receita.html', receita=None, acao='Nova Receita')
-
-
-    if request.method == 'POST':
-        dados = (
-            request.form['nome'].strip(),
-            request.form['descricao'].strip(),
-            request.form['data_registro'].strip(),
-            request.form['custo'].strip(),
-            request.form['tipo_receita'].strip().lower(),
-            request.form['status'].strip().lower(),
-            id,
-        )
-        conn.execute(
-            'UPDATE receita SET nome = ?, descricao = ?, data_registro = ?, custo = ?, tipo_receita = ?, status = ? WHERE id = ?',
-            dados,
-        )
-        conn.commit()
-        conn.close()
-        flash('Receita atualizada com sucesso.', 'sucesso')
-        return redirect(url_for('listar_receitas'))
 
 @app.route('/receitas/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -242,7 +190,9 @@ def editar_receita(id):
             id,
         )
         conn.execute(
-            'UPDATE receita SET nome = ?, descricao = ?, data_registro = ?, custo = ?, tipo_receita = ?, status = ? WHERE id = ?',
+            'UPDATE receita '
+            'SET nome = ?, descricao = ?, data_registro = ?, custo = ?, '
+            'tipo_receita = ?, status = ? WHERE id = ?',
             dados,
         )
         conn.commit()
@@ -278,7 +228,7 @@ def exportar_pdf():
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
-    largura, altura = A4
+    _, altura = A4
 
     pdf.setTitle('Relatorio de Receitas')
     pdf.setFont('Helvetica-Bold', 14)
@@ -313,4 +263,5 @@ def exportar_pdf():
     )
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    debug = os.getenv('FLASK_DEBUG', '0') == '1'
+    app.run(host='0.0.0.0', port=5000, debug=debug)

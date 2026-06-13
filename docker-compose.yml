@@ -1,0 +1,33 @@
+services:
+  homolog:
+    build: .
+    image: receitas-app:${APP_VERSION:-latest}
+    container_name: receitas_app_homolog
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: homolog
+      DATABASE_PATH: /data/receitas.db
+      SECRET_KEY: ${HOMOLOG_SECRET_KEY:-homolog-chave-altere}
+    ports:
+      - "5001:5000"
+    volumes:
+      - homolog_data:/data
+
+  prod:
+    image: receitas-app:${APP_VERSION:-latest}
+    container_name: receitas_app_prod
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      DATABASE_PATH: /data/receitas.db
+      SECRET_KEY: ${PROD_SECRET_KEY:-producao-chave-altere}
+    ports:
+      - "5000:5000"
+    volumes:
+      - prod_data:/data
+    profiles:
+      - prod
+
+volumes:
+  homolog_data:
+  prod_data:
