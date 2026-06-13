@@ -74,6 +74,16 @@ Arquivos criados para esse fluxo:
 
 ## Como rodar com Docker
 
+Ambiente de desenvolvimento no seu PC:
+```bash
+scripts/00_dev_up.sh
+```
+
+A aplicação de desenvolvimento fica disponível em:
+- http://localhost:5002
+
+Você continua editando os arquivos normalmente no VS Code. O container `dev` usa volume `.:/app`, então as alterações feitas no PC aparecem dentro do container.
+
 Build da imagem:
 ```bash
 docker build -t receitas-app:latest .
@@ -113,12 +123,26 @@ O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
 Os comandos principais da apresentação estão na pasta `scripts/`.
 
+Para desenvolver no PC usando container:
+
+```bash
+scripts/00_dev_up.sh
+scripts/00_dev_logs.sh
+scripts/00_dev_down.sh
+```
+
+Para rodar lint, mess detector e testes usando Docker:
+
+```bash
+scripts/02_run_checks_docker.sh
+```
+
 Sequência sugerida para demonstrar do zero na VM:
 
 ```bash
 cd ~/projeto/receitas-app
 scripts/clean_docker_images.sh
-scripts/02_run_checks.sh
+scripts/02_run_checks_docker.sh
 docker build -t receitas-app:latest .
 scripts/03_deploy_homolog.sh
 scripts/04_deploy_prod.sh

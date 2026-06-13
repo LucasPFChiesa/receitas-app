@@ -1,4 +1,20 @@
 services:
+  dev:
+    build: .
+    image: receitas-app-dev:${APP_VERSION:-latest}
+    container_name: receitas_app_dev
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: "1"
+      DATABASE_PATH: /data/receitas_dev.db
+      SECRET_KEY: ${DEV_SECRET_KEY:-dev-chave-local}
+    ports:
+      - "5002:5000"
+    volumes:
+      - .:/app
+      - dev_data:/data
+    command: flask --app app run --host 0.0.0.0 --port 5000 --debug
+
   homolog:
     build: .
     image: receitas-app:${APP_VERSION:-latest}
@@ -29,5 +45,6 @@ services:
       - prod
 
 volumes:
+  dev_data:
   homolog_data:
   prod_data:

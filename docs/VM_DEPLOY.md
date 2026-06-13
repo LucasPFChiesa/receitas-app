@@ -162,10 +162,11 @@ O Jenkins deve executar:
 2. Criar ambiente Python.
 3. Instalar `requirements-dev.txt`.
 4. Rodar `pyflakes`.
-5. Rodar `pytest`.
-6. Criar imagem Docker.
-7. Subir homologação em `5001`.
-8. Se estiver na branch `main`, subir produção em `5000`.
+5. Rodar `radon` como mess detector.
+6. Rodar `pytest`.
+7. Criar imagem Docker.
+8. Subir homologação em `5001`.
+9. Se estiver na branch `main`, subir produção em `5000`.
 
 ## 9. Portas usadas
 

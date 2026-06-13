@@ -33,6 +33,16 @@ pipeline {
             }
         }
 
+        stage('Mess detector') {
+            steps {
+                sh '''
+                    . .venv/bin/activate
+                    radon cc app.py init_db.py tests -s -a
+                    radon mi app.py init_db.py tests -s
+                '''
+            }
+        }
+
         stage('Testes') {
             steps {
                 sh '''
