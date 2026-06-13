@@ -70,7 +70,6 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -T 30 -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Enviar projeto para VM
         env:
@@ -85,8 +84,8 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp -o StrictHostKeyChecking=no /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
-          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
+          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=30 /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
             rm -rf ~/receitas-app.new &&
             mkdir -p ~/receitas-app.new &&
             tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
@@ -100,7 +99,7 @@ jobs:
           VM_HOST: ${{ secrets.VM_HOST }}
           VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
             cd ~/receitas-app &&
             sh scripts/subir_homologacao.sh
           '
@@ -125,7 +124,6 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -T 30 -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Enviar projeto para VM
         env:
@@ -140,8 +138,8 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp -o StrictHostKeyChecking=no /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
-          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
+          scp -o StrictHostKeyChecking=no -o ServerAliveInterval=30 /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
             rm -rf ~/receitas-app.new &&
             mkdir -p ~/receitas-app.new &&
             tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
@@ -155,7 +153,7 @@ jobs:
           VM_HOST: ${{ secrets.VM_HOST }}
           VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 "$VM_USER@$VM_HOST" '
             cd ~/receitas-app &&
             sh scripts/subir_producao.sh
           '
