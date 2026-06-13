@@ -24,18 +24,34 @@ cd ~/receitas-app
 
 ## 2. Preparar VM limpa
 
-Em uma VM limpa, execute:
+Em uma VM limpa, primeiro configure o token do GitHub. O token precisa ter acesso ao repositório e permissão `Contents: Read and write`.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+mkdir -p ~/keys
+printf "Token GitHub: "
+stty -echo
+read -r GITHUB_TOKEN
+stty echo
+printf "\n"
+printf "%s\n" "$GITHUB_TOKEN" > ~/keys/github_token.txt
+chmod 600 ~/keys/github_token.txt
+```
+
+Cole o token no arquivo, em uma única linha.
+
+Depois execute:
+
+```bash
+curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
 chmod +x preparar_vm.sh
-./preparar_vm.sh
+GITHUB_TOKEN="$GITHUB_TOKEN" ./preparar_vm.sh
 ```
 
 Esse script:
 
 - instala Git, Docker e Docker Compose;
 - clona a branch `configurando-com-docker`;
+- configura o projeto para conseguir fazer `git pull` usando o token local;
 - deixa o projeto em `~/receitas-app`;
 - prepara as imagens Docker;
 - não inicia nenhum container.

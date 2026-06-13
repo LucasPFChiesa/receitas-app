@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "Atualizando codigo..."
-git pull
+scripts/git_pull.sh
 
 echo "Atualizando container de producao..."
 sh scripts/docker-compose.sh -f docker-compose.vm.yml --profile prod up -d --build prod
