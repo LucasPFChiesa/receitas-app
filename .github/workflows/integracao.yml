@@ -61,13 +61,21 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar SSH
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
+          test -n "$VM_HOST"
+          test -n "$VM_SSH_KEY"
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 30 -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Enviar projeto para VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
           tar \
             --exclude='.git' \
@@ -77,8 +85,8 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp /tmp/receitas-app.tgz "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/receitas-app.tgz"
-          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" '
+          scp -o StrictHostKeyChecking=no /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
+          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
             rm -rf ~/receitas-app.new &&
             mkdir -p ~/receitas-app.new &&
             tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
@@ -88,8 +96,11 @@ jobs:
           '
 
       - name: Subir homologacao
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" '
+          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
             cd ~/receitas-app &&
             sh scripts/subir_homologacao.sh
           '
@@ -105,13 +116,21 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar SSH
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
+          test -n "$VM_HOST"
+          test -n "$VM_SSH_KEY"
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 30 -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Enviar projeto para VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
           tar \
             --exclude='.git' \
@@ -121,8 +140,8 @@ jobs:
             --exclude='receitas.db' \
             --exclude='output.log' \
             -czf /tmp/receitas-app.tgz .
-          scp /tmp/receitas-app.tgz "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/receitas-app.tgz"
-          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" '
+          scp -o StrictHostKeyChecking=no /tmp/receitas-app.tgz "$VM_USER@$VM_HOST:/tmp/receitas-app.tgz"
+          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
             rm -rf ~/receitas-app.new &&
             mkdir -p ~/receitas-app.new &&
             tar -xzf /tmp/receitas-app.tgz -C ~/receitas-app.new &&
@@ -132,8 +151,11 @@ jobs:
           '
 
       - name: Subir producao
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
-          ssh "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" '
+          ssh -o StrictHostKeyChecking=no "$VM_USER@$VM_HOST" '
             cd ~/receitas-app &&
             sh scripts/subir_producao.sh
           '
