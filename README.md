@@ -111,17 +111,17 @@ cd ~/receitas-app
 Preparar uma VM limpa:
 
 ```bash
-mkdir -p ~/keys
 printf "Token GitHub: "
 stty -echo
 read -r GITHUB_TOKEN
 stty echo
 printf "\n"
-printf "%s\n" "$GITHUB_TOKEN" > ~/keys/github_token.txt
-chmod 600 ~/keys/github_token.txt
+git config --global credential.helper store
+printf "https://LucasPFChiesa:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
+chmod 600 ~/.git-credentials
 curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
 chmod +x preparar_vm.sh
-GITHUB_TOKEN="$GITHUB_TOKEN" ./preparar_vm.sh
+./preparar_vm.sh
 ```
 
 Limpar Docker:
