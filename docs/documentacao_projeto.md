@@ -1,0 +1,193 @@
+# Sistema de Receitas
+
+## Visão geral
+
+Aplicação web em Flask com SQLite para cadastro, consulta, edição, exclusão, filtros e exportação em PDF de receitas.
+
+O projeto usa containers Docker para separar os ambientes:
+
+- Desenvolvimento no computador local.
+- Homologação na máquina virtual.
+- Produção na máquina virtual.
+
+## Arquitetura
+
+```text
+Computador local
+  |
+  | commit e push
+  v
+GitHub
+  |
+  | GitHub Actions
+  | - linter
+  | - mess detector
+  | - testes
+  | - build Docker
+  | - deploy automatico em homologacao
+  v
+VM 177.44.248.83
+  |
+  | containers
+  | - homologacao
+  | - producao
+```
+
+## Ambientes
+
+### Desenvolvimento
+
+Roda apenas no computador local.
+
+Arquivo:
+
+```text
+docker-compose.yml
+```
+
+Serviço:
+
+```text
+dev
+```
+
+URL:
+
+```text
+http://localhost:5002
+```
+
+### Homologação
+
+Roda apenas na VM.
+
+Arquivo:
+
+```text
+docker-compose.vm.yml
+```
+
+Serviço:
+
+```text
+homolog
+```
+
+URL:
+
+```text
+http://177.44.248.83:5001
+```
+
+### Produção
+
+Roda apenas na VM.
+
+Arquivo:
+
+```text
+docker-compose.vm.yml
+```
+
+Serviço:
+
+```text
+prod
+```
+
+URL:
+
+```text
+http://177.44.248.83:5000
+```
+
+## Bancos separados
+
+Cada ambiente usa um volume Docker próprio:
+
+```text
+dev        -> dev_data
+homolog    -> homolog_data
+prod       -> prod_data
+```
+
+Assim, dados cadastrados em desenvolvimento ou homologação não alteram o banco da produção.
+
+## Integração
+
+A integração roda no GitHub Actions.
+
+Arquivo:
+
+```text
+.github/workflows/integracao.yml
+```
+
+Etapas:
+
+1. Instala dependências.
+2. Executa linter com `pyflakes`.
+3. Executa mess detector com `radon`.
+4. Executa testes com `pytest`.
+5. Valida o build Docker.
+6. Atualiza homologação automaticamente na branch `configurando-com-docker`.
+
+Produção é atualizada apenas por execução manual do workflow no GitHub Actions.
+
+## Fluxo de uso
+
+Desenvolvimento local:
+
+```bash
+sh scripts/docker-compose.sh up -d dev
+```
+
+Enviar alterações:
+
+```bash
+git add .
+git commit -m "Mensagem da alteracao"
+git push
+```
+
+Após o push, o GitHub Actions valida o projeto e atualiza homologação.
+
+Para produção, usar `Run workflow` no GitHub Actions e selecionar `producao`.
+
+## Scripts da VM
+
+```bash
+scripts/subir_homologacao.sh
+scripts/atualizar_homologacao.sh
+scripts/derrubar_homologacao.sh
+scripts/subir_producao.sh
+scripts/atualizar_producao.sh
+scripts/derrubar_producao.sh
+scripts/status.sh
+```
+
+## Estrutura principal
+
+```text
+app.py                         aplicação Flask
+schema.sql                     estrutura do banco
+seed.sql                       dados iniciais
+init_db.py                     criação do banco
+Dockerfile                     imagem da aplicação
+docker-compose.yml             ambiente local
+docker-compose.vm.yml          ambientes da VM
+requirements.txt               dependências da aplicação
+requirements-dev.txt           dependências da integração
+templates/                     páginas HTML
+static/                        CSS
+tests/                         testes automatizados
+scripts/                       scripts operacionais
+.github/workflows/             GitHub Actions
+```
+
+## Acesso padrão
+
+```text
+login: admin
+senha: admin123
+```

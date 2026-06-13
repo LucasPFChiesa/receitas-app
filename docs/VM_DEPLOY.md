@@ -47,9 +47,43 @@ docker --version
 docker-compose --version
 ```
 
-## 3. Enviar o projeto para a VM
+## 3. Configurar deploy automatico no GitHub
 
-O projeto pode ser copiado direto do PC para a VM. Na VM, o caminho usado será:
+O GitHub Actions usa SSH para enviar o projeto para a VM e atualizar os containers.
+
+Crie uma chave SSH no seu PC:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/receitas_actions -C "receitas-actions"
+```
+
+Copie a chave publica para a VM:
+
+```bash
+ssh-copy-id -i ~/.ssh/receitas_actions.pub univates@177.44.248.83
+```
+
+No GitHub, entre no repositório e acesse:
+
+```text
+Settings > Secrets and variables > Actions > New repository secret
+```
+
+Cadastre estes secrets:
+
+```text
+VM_HOST=177.44.248.83
+VM_USER=univates
+VM_SSH_KEY=conteudo da chave privada ~/.ssh/receitas_actions
+```
+
+Para copiar o conteúdo da chave privada:
+
+```bash
+cat ~/.ssh/receitas_actions
+```
+
+Na VM, o caminho usado pelo deploy será:
 
 ```bash
 ~/receitas-app
@@ -103,7 +137,7 @@ Produção:
 http://177.44.248.83:5000
 ```
 
-## 6. Integração no GitHub Actions
+## 6. Integração e deploy no GitHub Actions
 
 A integração roda automaticamente no GitHub quando você envia código:
 
@@ -117,7 +151,15 @@ Ela executa:
 2. Mess detector com `radon`.
 3. Testes com `pytest`.
 
-Depois de a integração passar, atualize a homologação na VM:
+Quando o push é feito na branch `configurando-com-docker`, o GitHub Actions:
+
+1. Executa linter, mess detector, testes e build Docker.
+2. Envia o projeto para `~/receitas-app` na VM.
+3. Atualiza o container de homologação.
+
+A produção não atualiza automaticamente. Para atualizar produção, use o botão `Run workflow` no GitHub Actions e escolha o ambiente `producao`.
+
+Para atualizar homologação manualmente pela VM:
 
 ```bash
 cd ~/receitas-app
@@ -135,7 +177,7 @@ O GitHub Actions deve executar:
 5. Rodar `radon` como mess detector.
 6. Rodar `pytest`.
 7. Validar o build da imagem Docker.
-8. Liberar o código para ser atualizado em homologação.
+8. Atualizar homologação automaticamente na branch `configurando-com-docker`.
 
 ## 8. Portas usadas
 

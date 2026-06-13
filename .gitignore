@@ -12,6 +12,9 @@ htmlcov/
 # Ambientes locais
 .env
 .env.*
+keys/
+*.pem
+*.key
 
 # Banco e arquivos gerados localmente
 receitas.db

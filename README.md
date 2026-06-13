@@ -57,8 +57,8 @@ Fluxo usado no trabalho:
 3. A integração, usando GitHub Actions, valida o repositório no GitHub.
 4. A integração instala dependências, executa linter, mess detector e testes.
 5. Se tudo passar, a integração valida o build Docker.
-6. O projeto é enviado para a VM e o container de homologação é atualizado.
-7. A produção só é atualizada manualmente.
+6. Na branch `configurando-com-docker`, a homologação é atualizada automaticamente na VM.
+7. A produção só é atualizada manualmente pelo GitHub Actions.
 
 Arquivos principais desse fluxo:
 
@@ -92,6 +92,8 @@ Ela executa:
 - Linter com `pyflakes`
 - Mess detector com `radon`
 - Testes com `pytest`
+- Build Docker
+- Deploy automático em homologação na branch `configurando-com-docker`
 
 Página da integração:
 
@@ -121,13 +123,15 @@ scripts/subir_producao.sh
 scripts/status.sh
 ```
 
-Se o professor pedir para alterar um caractere e atualizar apenas homologação:
+Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub e a homologação é atualizada automaticamente.
+
+Para atualizar homologação manualmente pela VM:
 
 ```bash
 scripts/atualizar_homologacao.sh
 ```
 
-A produção só muda quando você rodar `scripts/atualizar_producao.sh`.
+A produção só muda pelo workflow manual do GitHub Actions ou pelo script `scripts/atualizar_producao.sh`.
 
 Para derrubar os ambientes:
 
