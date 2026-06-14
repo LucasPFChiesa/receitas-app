@@ -41,7 +41,7 @@ chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
 
-Se o arquivo `preparar_vm.sh` já estiver na VM, basta executar `./preparar_vm.sh`. O script usa o token salvo em `~/keys/github_token.txt`.
+Se o arquivo `preparar_vm.sh` já estiver na VM, basta executar `./preparar_vm.sh`.
 
 Esse script:
 

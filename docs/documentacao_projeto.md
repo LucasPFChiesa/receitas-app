@@ -132,7 +132,7 @@ Etapas:
 
 Na VM, a preparação inicial é feita por um script único. Depois disso, homologação e produção são controladas por scripts separados.
 
-Produção é atualizada apenas por execução manual do workflow no GitHub Actions.
+Produção só é atualizada quando o script de produção for executado na VM.
 
 ## Fluxo de uso
 
@@ -164,7 +164,7 @@ chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
 
-Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`. Ele usa o token salvo em `~/keys/github_token.txt`.
+Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`.
 
 Depois, subir homologação ou produção com os scripts próprios.
 
