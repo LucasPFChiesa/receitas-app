@@ -139,15 +139,13 @@ Produção só é atualizada quando o script de produção for executado na VM.
 Desenvolvimento local:
 
 ```bash
-sh scripts/docker-compose.sh up -d dev
+scripts/dev.sh
 ```
 
 Enviar alterações:
 
 ```bash
-git add .
-git commit -m "Mensagem da alteracao"
-git push
+scripts/enviar_github.sh "Mensagem da alteracao"
 ```
 
 Após o push, o GitHub Actions valida o projeto.
@@ -171,6 +169,7 @@ Depois, subir homologação ou produção com os scripts próprios.
 ## Scripts da VM
 
 ```bash
+scripts/resetar_vm.sh
 scripts/subir_homologacao.sh
 scripts/atualizar_homologacao.sh
 scripts/derrubar_homologacao.sh

@@ -19,7 +19,6 @@ Dados da VM mostrada:
 
 ```bash
 ssh univates@177.44.248.83
-cd ~/receitas-app
 ```
 
 ## 2. Preparar VM limpa
@@ -50,6 +49,12 @@ Esse script:
 - deixa o projeto em `~/receitas-app`;
 - prepara as imagens Docker;
 - não inicia nenhum container.
+
+Depois da preparação, entre na pasta:
+
+```bash
+cd ~/receitas-app
+```
 
 A pasta da VM deve ter estes arquivos:
 
@@ -141,6 +146,15 @@ O GitHub Actions deve executar:
 Se a VM tiver firewall ou regra de nuvem, libere essas portas.
 
 ## 8. Scripts prontos para apresentacao
+
+Dicas antes da apresentacao:
+
+```bash
+cd ~/receitas-app
+scripts/resetar_vm.sh
+```
+
+Esse reset deixa a VM sem projeto e sem containers, mantendo o token em `~/keys/github_token.txt`.
 
 Dentro da VM, na pasta do projeto:
 

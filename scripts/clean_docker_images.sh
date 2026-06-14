@@ -1,13 +1,29 @@
-#! /bin/bash
+#!/usr/bin/env bash
+set -e
 
 # parar todos os containers
-sudo docker stop $(sudo docker ps -a -q)
+CONTAINERS="$(sudo docker ps -a -q)"
+if [ -n "$CONTAINERS" ]; then
+    sudo docker stop $CONTAINERS
+else
+    echo "Nenhum container para parar."
+fi
 
 # deletar todos os containers
-sudo docker rm $(sudo docker ps -a -q)
+CONTAINERS="$(sudo docker ps -a -q)"
+if [ -n "$CONTAINERS" ]; then
+    sudo docker rm $CONTAINERS
+else
+    echo "Nenhum container para deletar."
+fi
 
 # deletar todas as imagens
-sudo docker rmi $(sudo docker images -a -q)
+IMAGES="$(sudo docker images -a -q)"
+if [ -n "$IMAGES" ]; then
+    sudo docker rmi $IMAGES
+else
+    echo "Nenhuma imagem para deletar."
+fi
 
 # deletar: caches e builds - limpeza geral
 sudo docker system prune -a -f

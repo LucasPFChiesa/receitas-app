@@ -100,6 +100,45 @@ Página da integração:
 
 O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
+## Roteiro rapido da apresentacao
+
+No PC, subir desenvolvimento:
+
+```bash
+scripts/dev.sh
+```
+
+Depois de alterar algo no projeto, enviar para o GitHub:
+
+```bash
+scripts/enviar_github.sh "Ajusta detalhe da apresentacao"
+```
+
+Na VM limpa, baixar e executar o preparador:
+
+```bash
+TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
+curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+chmod +x preparar_vm.sh
+./preparar_vm.sh
+```
+
+Depois da preparacao, usar somente scripts:
+
+```bash
+cd ~/receitas-app
+scripts/subir_homologacao.sh
+scripts/subir_producao.sh
+scripts/status.sh
+```
+
+Atualizar depois de um novo push:
+
+```bash
+scripts/atualizar_homologacao.sh
+scripts/atualizar_producao.sh
+```
+
 ## Scripts da VM
 
 Os comandos principais ficam na pasta `scripts/`.
