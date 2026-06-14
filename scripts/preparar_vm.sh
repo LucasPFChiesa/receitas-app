@@ -4,23 +4,16 @@ set -e
 REPO_URL="https://github.com/LucasPFChiesa/receitas-app.git"
 BRANCH="configurando-com-docker"
 APP_DIR="$HOME/receitas-app"
+TOKEN_FILE="$HOME/keys/github_token.txt"
 
-if [ ! -f "$HOME/.git-credentials" ]; then
-    printf "Cole o token do GitHub: "
-    stty -echo
-    read -r GITHUB_TOKEN
-    stty echo
-    printf "\n"
-
-    if [ -z "$GITHUB_TOKEN" ]; then
-        echo "Token vazio."
-        exit 1
-    fi
-
-    git config --global credential.helper store
-    printf 'https://LucasPFChiesa:%s@github.com\n' "$GITHUB_TOKEN" > "$HOME/.git-credentials"
-    chmod 600 "$HOME/.git-credentials"
+if [ ! -f "$TOKEN_FILE" ]; then
+    echo "Token do GitHub nao encontrado."
+    echo "Crie o arquivo: $TOKEN_FILE"
+    exit 1
 fi
+
+GITHUB_TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"
+AUTH_HEADER="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
 
 echo "Instalando dependencias da VM..."
 sudo apt update
@@ -29,7 +22,7 @@ sudo systemctl enable --now docker
 
 echo "Baixando projeto..."
 rm -rf "$APP_DIR"
-git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
+git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH_HEADER" clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 
 cd "$APP_DIR"
 chmod +x docker-entrypoint.sh scripts/*.sh

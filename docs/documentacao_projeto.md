@@ -152,23 +152,19 @@ git push
 
 Após o push, o GitHub Actions valida o projeto.
 
-Na VM limpa, o token do GitHub fica como credencial geral do usuário, fora do projeto. Para baixar o script e preparar o projeto:
+Na VM limpa, o token do GitHub fica fora do projeto, no arquivo `~/keys/github_token.txt`. Para baixar o script e preparar o projeto:
 
 ```bash
-printf "Token GitHub: "
-stty -echo
-read -r GITHUB_TOKEN
-stty echo
-printf "\n"
-git config --global credential.helper store
-printf "https://LucasPFChiesa:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
-chmod 600 ~/.git-credentials
-curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+mkdir -p ~/keys
+nano ~/keys/github_token.txt
+chmod 600 ~/keys/github_token.txt
+TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
+curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
 chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
 
-Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`. Se a credencial ainda não existir, o script pede o token e grava em `~/.git-credentials`.
+Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`. Ele usa o token salvo em `~/keys/github_token.txt`.
 
 Depois, subir homologação ou produção com os scripts próprios.
 

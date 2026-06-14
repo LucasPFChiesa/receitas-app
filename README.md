@@ -111,18 +111,13 @@ cd ~/receitas-app
 Preparar uma VM limpa:
 
 ```bash
-printf "Token GitHub: "
-stty -echo
-read -r GITHUB_TOKEN
-stty echo
-printf "\n"
-git config --global credential.helper store
-printf "https://LucasPFChiesa:%s@github.com\n" "$GITHUB_TOKEN" > ~/.git-credentials
-chmod 600 ~/.git-credentials
-curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
+TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
+curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
 chmod +x preparar_vm.sh
 ./preparar_vm.sh
 ```
+
+O arquivo `~/keys/github_token.txt` fica fora do projeto e deve existir manualmente no PC e na VM.
 
 Limpar Docker:
 
