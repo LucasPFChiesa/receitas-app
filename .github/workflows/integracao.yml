@@ -58,13 +58,13 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_vm
           chmod 600 ~/.ssh/id_vm
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts || true
 
       - name: Atualizar homologacao na VM
         env:
           DEPLOY_SHA: ${{ github.sha }}
         run: |
-          ssh -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
+          ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
           set -e
           cd /home/univates/receitas-app
           GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
