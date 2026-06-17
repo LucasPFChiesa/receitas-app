@@ -1,0 +1,120 @@
+name: Promover Integracao para Producao
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: read
+
+env:
+  IMAGE_REPOSITORY: ghcr.io/lucaspfchiesa/receitas-app
+
+jobs:
+  preparar-promocao:
+    name: Verificar versao da integracao
+    runs-on: ubuntu-latest
+    outputs:
+      image_sha: ${{ steps.versao.outputs.image_sha }}
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar branch integracao
+        id: versao
+        run: |
+          set -e
+          git fetch origin main integracao
+
+          if ! git merge-base --is-ancestor origin/main origin/integracao; then
+            echo "A branch integracao nao contem a main atual." >&2
+            echo "Atualize integracao com main antes de promover para producao." >&2
+            exit 1
+          fi
+
+          IMAGE_SHA="$(git rev-parse origin/integracao)"
+          echo "image_sha=$IMAGE_SHA" >> "$GITHUB_OUTPUT"
+          echo "Imagem que sera promovida: $IMAGE_REPOSITORY:$IMAGE_SHA"
+
+      - name: Login no GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Confirmar que a imagem existe
+        run: docker manifest inspect "$IMAGE_REPOSITORY:${{ steps.versao.outputs.image_sha }}"
+
+  aprovar-e-mergear:
+    name: Aprovar e mergear integracao na main
+    needs: preparar-promocao
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Avancar main para integracao
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main integracao
+          git checkout main
+          git merge --ff-only origin/integracao
+          git push origin HEAD:main
+
+  deploy-producao:
+    name: Atualizar producao
+    needs:
+      - preparar-promocao
+      - aprovar-e-mergear
+    runs-on: [self-hosted, receitas-app-vm]
+
+    steps:
+      - name: Baixar codigo promovido
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preparar-promocao.outputs.image_sha }}
+
+      - name: Atualizar producao
+        run: |
+          set -e
+          export COMPOSE_PROJECT_NAME=receitas-app
+          export APP_IMAGE="$IMAGE_REPOSITORY:${{ needs.preparar-promocao.outputs.image_sha }}"
+
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          sudo docker pull "$APP_IMAGE"
+
+          sudo docker ps -aq --filter "name=receitas_app_prod" \
+            | xargs -r sudo docker rm -f
+
+          if sudo -n docker compose version >/dev/null 2>&1; then
+            sudo env COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" APP_IMAGE="$APP_IMAGE" \
+              docker compose -f docker-compose.vm.yml --profile prod up -d prod
+          else
+            sudo env COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" APP_IMAGE="$APP_IMAGE" \
+              docker-compose -f docker-compose.vm.yml --profile prod up -d prod
+          fi
+
+          python3 - <<'PY'
+          import sys
+          import time
+          import urllib.request
+
+          url = "http://127.0.0.1:5000/login"
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(url, timeout=3) as response:
+                      if response.status == 200:
+                          sys.exit(0)
+              except Exception:
+                  time.sleep(2)
+          print("Producao nao respondeu em http://127.0.0.1:5000/login", file=sys.stderr)
+          sys.exit(1)
+          PY

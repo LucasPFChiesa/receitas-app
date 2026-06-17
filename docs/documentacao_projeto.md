@@ -159,12 +159,9 @@ Após o push, o GitHub Actions valida o projeto.
 Na VM limpa, prepare o projeto com Docker e Git:
 
 ```bash
-sudo apt update
-sudo apt install -y git docker.io docker-compose curl
-sudo systemctl enable --now docker
-git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+./scripts/start.sh
 ```
 
 Depois, suba homologação ou produção com uma imagem manual ou com uma imagem ja publicada no GHCR.

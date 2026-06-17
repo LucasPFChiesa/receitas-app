@@ -31,23 +31,20 @@ ssh univates@177.44.248.83
 
 Se a VM tiver o Compose antigo, use `docker-compose` no lugar de `docker compose`.
 
-Para usar os scripts manualmente na VM, instale as dependências, clone o projeto e prepare as imagens:
+Para preparar a VM a partir do zero, clone o projeto e rode o script principal:
 
 ```bash
-sudo apt update
-sudo apt install -y git docker.io docker-compose curl
-sudo systemctl enable --now docker
-git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+./scripts/start.sh
 ```
 
-Esses comandos:
+Esse script:
 
-- instala Git, Docker e Docker Compose;
-- clona a branch `configurando-com-docker`;
-- deixa o projeto em `~/receitas-app`;
-- cria uma imagem manual e inicia os containers para teste local na VM.
+- instala dependências básicas da VM;
+- configura ou recria o self-hosted runner;
+- cria uma imagem manual se nenhuma imagem for informada por `APP_IMAGE`;
+- inicia homologação e produção.
 
 Depois da preparação, entre na pasta:
 
@@ -61,10 +58,11 @@ A pasta da VM deve ter estes arquivos:
 - `docker-compose.yml`
 - `docker-compose.vm.yml`
 - `.dockerignore`
-- `docker-entrypoint.sh`
+- `scripts/docker-entrypoint.sh`
 - `requirements-dev.txt`
-- `subir_homolog_prod.sh`
-- `derrubar_homolog_prod.sh`
+- `scripts/start.sh`
+- `scripts/subir_homolog_prod.sh`
+- `scripts/derrubar_homolog_prod.sh`
 
 ## 3. Testar homologacao
 
@@ -72,7 +70,7 @@ Na VM:
 
 ```bash
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+APP_IMAGE=receitas-app:manual ./scripts/subir_homolog_prod.sh
 sudo docker-compose -f docker-compose.vm.yml ps
 ```
 
@@ -94,7 +92,7 @@ Na VM:
 
 ```bash
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+APP_IMAGE=receitas-app:manual ./scripts/subir_homolog_prod.sh
 sudo docker-compose -f docker-compose.vm.yml --profile prod ps
 ```
 
@@ -214,7 +212,7 @@ Para atualizar homologação manualmente pela VM:
 
 ```bash
 cd ~/receitas-app
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./subir_homolog_prod.sh
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
 ```
 
 ## 7. Resultado esperado
@@ -321,19 +319,19 @@ docker compose -f docker-compose.vm.yml --profile prod ps
 Subir homologação e produção juntos:
 
 ```bash
-./subir_homolog_prod.sh
+./scripts/subir_homolog_prod.sh
 ```
 
 Para usar uma imagem especifica ja publicada no GHCR:
 
 ```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./subir_homolog_prod.sh
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
 ```
 
 Limpar imagens antigas do projeto sem apagar imagens em uso:
 
 ```bash
-./clean_docker_images.sh
+./scripts/clean_docker_images.sh
 ```
 
 Depois da limpeza, para reconstruir tudo pela automação:
@@ -369,37 +367,37 @@ O workflow faz:
 Derrubar homologação e produção juntos:
 
 ```bash
-./derrubar_homolog_prod.sh
+./scripts/derrubar_homolog_prod.sh
 ```
 
 Desconectar o runner da VM do GitHub Actions:
 
 ```bash
-./desconectar_runner_vm.sh
+./scripts/desconectar_runner_vm.sh
 ```
 
 Conectar o runner da VM novamente:
 
 ```bash
-./conectar_runner_vm.sh
+./scripts/conectar_runner_vm.sh
 ```
 
 Ver status do runner:
 
 ```bash
-./status_runner_vm.sh
+./scripts/status_runner_vm.sh
 ```
 
 Para usar outra VM rapidamente, passe IP e usuário:
 
 ```bash
-./conectar_runner_vm.sh 177.44.248.83 univates
-./desconectar_runner_vm.sh 177.44.248.83 univates
-./status_runner_vm.sh 177.44.248.83 univates
+./scripts/conectar_runner_vm.sh 177.44.248.83 univates
+./scripts/desconectar_runner_vm.sh 177.44.248.83 univates
+./scripts/status_runner_vm.sh 177.44.248.83 univates
 ```
 
 Também é possível usar variáveis:
 
 ```bash
-VM_HOST=177.44.248.83 VM_USER=univates ./conectar_runner_vm.sh
+VM_HOST=177.44.248.83 VM_USER=univates ./scripts/conectar_runner_vm.sh
 ```
