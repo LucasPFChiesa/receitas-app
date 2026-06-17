@@ -46,71 +46,28 @@ jobs:
   deploy-homologacao:
     name: Deploy homologacao
     needs: linter-messdetector-testes
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, receitas-app-vm]
     if: github.event_name == 'push' && github.ref == 'refs/heads/configurando-com-docker'
     environment:
       name: homologacao
       url: http://177.44.248.83:5001
 
     steps:
-      - name: Configurar SSH
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_vm
-          chmod 600 ~/.ssh/id_vm
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
-      - name: Atualizar homologacao na VM
-        env:
-          DEPLOY_SHA: ${{ github.sha }}
+      - name: Atualizar homologacao
         run: |
-          cat > /tmp/deploy_homologacao.sh <<'EOF'
           set -e
-          cd /home/univates/receitas-app
-          GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
-          if [ -s "$GITHUB_TOKEN_FILE" ]; then
-            ASKPASS="$(mktemp)"
-            trap 'rm -f "$ASKPASS"' EXIT
-            cat > "$ASKPASS" <<'ASKPASS_EOF'
-          #!/bin/sh
-          case "$1" in
-            *Username*) printf '%s\n' 'x-access-token' ;;
-            *Password*) tr -d '\r\n' < "$HOME/keys/github_token.txt" ;;
-          esac
-          ASKPASS_EOF
-            chmod 700 "$ASKPASS"
-            GIT_ASKPASS="$ASKPASS" GIT_TERMINAL_PROMPT=0 git fetch origin configurando-com-docker
-          else
-            git fetch origin configurando-com-docker
-          fi
-          git checkout --detach "$DEPLOY_SHA"
-          if docker ps >/dev/null 2>&1; then
-            docker ps -aq --filter "name=receitas_app_homolog" | xargs -r docker rm -f
-          elif sudo -n docker ps >/dev/null 2>&1; then
-            sudo docker ps -aq --filter "name=receitas_app_homolog" | xargs -r sudo docker rm -f
-          fi
+          export COMPOSE_PROJECT_NAME=receitas-app
 
-          if docker ps >/dev/null 2>&1; then
-            if docker compose version >/dev/null 2>&1; then
-              docker compose -f docker-compose.vm.yml up -d --build homolog
-            else
-              docker-compose -f docker-compose.vm.yml up -d --build homolog
-            fi
-          elif sudo -n docker ps >/dev/null 2>&1; then
-            if sudo -n docker compose version >/dev/null 2>&1; then
-              sudo docker compose -f docker-compose.vm.yml up -d --build homolog
-            else
-              sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
-            fi
-          else
-            echo "Sem permissao para acessar Docker"
-            exit 1
-          fi
-          EOF
+          sudo docker ps -aq --filter "name=receitas_app_homolog" \
+            | xargs -r sudo docker rm -f
 
-          for attempt in 1 2 3 4 5; do
-            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" < /tmp/deploy_homologacao.sh; then
-              exit 0
-            fi
-            sleep $((attempt * 10))
-          done
-          exit 1
+          if sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose -f docker-compose.vm.yml up -d --build homolog
+          else
+            sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
+          fi

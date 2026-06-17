@@ -169,11 +169,11 @@ docker compose -f docker-compose.vm.yml build homolog prod
 
 Depois, suba homologação ou produção com `docker compose`.
 
-Para o deploy automático funcionar pelo GitHub Actions, o repositório precisa ter os secrets `VM_HOST`, `VM_USER` e `VM_SSH_KEY`. O secret `VM_SSH_KEY` permite que o GitHub Actions entre na VM por SSH.
+Para o deploy automático funcionar pelo GitHub Actions, a VM possui um self-hosted runner instalado como serviço com o label `receitas-app-vm`.
 
-O token em `~/keys/github_token.txt` fica na VM e é usado para o `git fetch` autenticado do repositório. O ambiente `production` deve ter aprovação obrigatória em `Settings -> Environments`.
+Com isso, os jobs de deploy rodam dentro da própria VM e executam Docker localmente. O ambiente `production` deve ter aprovação obrigatória em `Settings -> Environments`.
 
-O deploy automático não chama scripts de atualização; o workflow acessa a VM por SSH, busca a branch, faz checkout do commit aprovado e executa Docker diretamente na VM.
+O deploy automático não chama scripts de atualização; o runner da VM baixa o commit aprovado e executa Docker diretamente na VM.
 
 ## Comandos da VM
 

@@ -120,15 +120,16 @@ Ela executa:
 5. Atualização automática da homologação, se tudo passar.
 6. Atualização da produção somente depois de aprovação manual no GitHub.
 
-Para o deploy pelo GitHub funcionar, cadastre estes secrets no repositório:
+Para o deploy pelo GitHub funcionar, a VM deve ter um self-hosted runner do GitHub Actions instalado como serviço. Neste projeto ele usa o nome `receitas-app-vm` e os labels:
 
 ```text
-VM_HOST      -> 177.44.248.83
-VM_USER      -> univates
-VM_SSH_KEY   -> chave privada SSH que acessa a VM
+self-hosted
+receitas-app-vm
+homologacao
+producao
 ```
 
-O arquivo `~/keys/github_token.txt` deve existir na VM. Ele é usado pela própria VM para fazer `git fetch` autenticado no GitHub. Ele não substitui o secret `VM_SSH_KEY`, porque o GitHub Actions ainda precisa de uma chave SSH para abrir a conexão com a VM.
+Com isso, o GitHub não precisa abrir SSH para a VM. O próprio runner da VM baixa o commit aprovado e executa Docker localmente.
 
 Também configure o ambiente `production` no GitHub com aprovação obrigatória:
 
@@ -145,10 +146,10 @@ O fluxo fica assim:
 ```text
 git push
   -> CI e Homologacao roda linter, mess detector, testes e build Docker
-  -> se passar, CI e Homologacao atualiza homologacao automaticamente
+  -> se passar, o runner receitas-app-vm atualiza homologacao automaticamente
   -> Deploy Producao inicia depois da CI e Homologacao concluida com sucesso
   -> Deploy Producao fica aguardando aprovacao no ambiente production
-  -> depois da aprovacao, Deploy Producao atualiza o container de producao
+  -> depois da aprovacao, o runner receitas-app-vm atualiza o container de producao
 ```
 
 Para atualizar homologação manualmente pela VM:

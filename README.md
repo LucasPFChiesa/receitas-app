@@ -112,13 +112,11 @@ Página da integração:
 
 - https://github.com/LucasPFChiesa/receitas-app/actions
 
-Para o deploy funcionar, configure no GitHub os secrets `VM_HOST`, `VM_USER` e `VM_SSH_KEY`. O secret `VM_SSH_KEY` é a chave que permite ao GitHub Actions entrar na VM por SSH.
-
-Na VM, mantenha o token do GitHub em `~/keys/github_token.txt`. O workflow usa esse arquivo dentro da VM para buscar a branch no GitHub antes de atualizar os containers.
+O deploy roda em um GitHub Actions self-hosted runner instalado na VM com o label `receitas-app-vm`. Assim, o GitHub não precisa abrir SSH para a VM; a própria VM executa o Docker localmente.
 
 Para produção ter botão de aprovação, configure o ambiente `production` em `Settings -> Environments` com revisor obrigatório.
 
-O deploy automático não depende de scripts `.sh`. O GitHub acessa a VM por SSH, busca a branch e faz checkout do commit exato que passou no workflow antes de atualizar o container.
+O deploy automático não depende de scripts `.sh`. O runner da VM baixa o commit exato aprovado pelo workflow e atualiza o container localmente.
 
 O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
