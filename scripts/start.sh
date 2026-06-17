@@ -27,6 +27,19 @@ ask_secret() {
   echo "$value"
 }
 
+ask_yes_no() {
+  local label="$1"
+  local default_value="$2"
+  local value
+
+  read -r -p "$label [$default_value]: " value
+  value="${value:-$default_value}"
+  case "$value" in
+    s|S|sim|SIM|y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 echo "Preparacao completa da VM para receitas-app"
 echo
 
@@ -37,6 +50,10 @@ RUNNER_LABELS="$(ask "Labels do runner" "${RUNNER_LABELS:-receitas-app-vm,homolo
 RUNNER_DIR="$(ask "Pasta de instalacao do runner" "${RUNNER_DIR:-$HOME/actions-runner}")"
 TOKEN_FILE="$(ask "Arquivo do token GitHub" "${TOKEN_FILE:-$HOME/keys/github_token.txt}")"
 PUBLIC_HOST="$(ask "IP ou host publico da VM" "${PUBLIC_HOST:-177.44.248.83}")"
+RESET_CONTAINERS="nao"
+if ask_yes_no "Remover containers antigos de homologacao/producao antes de subir" "s"; then
+  RESET_CONTAINERS="sim"
+fi
 APP_IMAGE="${APP_IMAGE:-receitas-app:manual}"
 
 if [ ! -f "$TOKEN_FILE" ]; then
@@ -133,6 +150,13 @@ sudo ./svc.sh start
 sudo ./svc.sh status || true
 
 cd "$APP_DIR"
+
+if [ "$RESET_CONTAINERS" = "sim" ]; then
+  echo
+  echo "Removendo containers antigos de homologacao/producao..."
+  sudo docker rm -f receitas_app_homolog receitas_app_prod 2>/dev/null || true
+  ./scripts/clean_docker_images.sh || true
+fi
 
 echo
 echo "Subindo homologacao e producao..."
