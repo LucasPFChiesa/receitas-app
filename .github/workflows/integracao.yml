@@ -121,7 +121,7 @@ jobs:
 
   deploy-producao:
     name: Aprovar deploy producao
-    needs: deploy-homologacao
+    needs: linter-messdetector-testes
     runs-on: [self-hosted, receitas-app-vm]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
