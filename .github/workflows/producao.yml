@@ -50,14 +50,21 @@ jobs:
           fi
           git checkout --detach "$DEPLOY_SHA"
 
-          if docker compose version >/dev/null 2>&1; then
-            docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
-          elif command -v docker-compose >/dev/null 2>&1; then
-            docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
-          elif sudo -n docker compose version >/dev/null 2>&1; then
-            sudo docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          if docker ps >/dev/null 2>&1; then
+            if docker compose version >/dev/null 2>&1; then
+              docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            else
+              docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            fi
+          elif sudo -n docker ps >/dev/null 2>&1; then
+            if sudo -n docker compose version >/dev/null 2>&1; then
+              sudo docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            else
+              sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            fi
           else
-            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            echo "Sem permissao para acessar Docker"
+            exit 1
           fi
           EOF
 

@@ -84,14 +84,21 @@ jobs:
           fi
           git checkout --detach "$DEPLOY_SHA"
 
-          if docker compose version >/dev/null 2>&1; then
-            docker compose -f docker-compose.vm.yml up -d --build homolog
-          elif command -v docker-compose >/dev/null 2>&1; then
-            docker-compose -f docker-compose.vm.yml up -d --build homolog
-          elif sudo -n docker compose version >/dev/null 2>&1; then
-            sudo docker compose -f docker-compose.vm.yml up -d --build homolog
+          if docker ps >/dev/null 2>&1; then
+            if docker compose version >/dev/null 2>&1; then
+              docker compose -f docker-compose.vm.yml up -d --build homolog
+            else
+              docker-compose -f docker-compose.vm.yml up -d --build homolog
+            fi
+          elif sudo -n docker ps >/dev/null 2>&1; then
+            if sudo -n docker compose version >/dev/null 2>&1; then
+              sudo docker compose -f docker-compose.vm.yml up -d --build homolog
+            else
+              sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
+            fi
           else
-            sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
+            echo "Sem permissao para acessar Docker"
+            exit 1
           fi
           EOF
 
