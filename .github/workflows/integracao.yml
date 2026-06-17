@@ -83,6 +83,11 @@ jobs:
             git fetch origin configurando-com-docker
           fi
           git checkout --detach "$DEPLOY_SHA"
+          if docker ps >/dev/null 2>&1; then
+            docker ps -aq --filter "name=receitas_app_homolog" | xargs -r docker rm -f
+          elif sudo -n docker ps >/dev/null 2>&1; then
+            sudo docker ps -aq --filter "name=receitas_app_homolog" | xargs -r sudo docker rm -f
+          fi
 
           if docker ps >/dev/null 2>&1; then
             if docker compose version >/dev/null 2>&1; then
