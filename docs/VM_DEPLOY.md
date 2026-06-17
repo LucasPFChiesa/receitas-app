@@ -62,8 +62,8 @@ A pasta da VM deve ter estes arquivos:
 - `.dockerignore`
 - `docker-entrypoint.sh`
 - `requirements-dev.txt`
-- `subir_vm.sh`
-- `derrubar_vm.sh`
+- `subir_homolog_prod.sh`
+- `derrubar_homolog_prod.sh`
 
 ## 3. Testar homologacao
 
@@ -255,11 +255,43 @@ docker compose -f docker-compose.vm.yml --profile prod ps
 Subir homologação e produção juntos:
 
 ```bash
-./subir_vm.sh
+./subir_homolog_prod.sh
 ```
 
 Derrubar homologação e produção juntos:
 
 ```bash
-./derrubar_vm.sh
+./derrubar_homolog_prod.sh
+```
+
+Desconectar o runner da VM do GitHub Actions:
+
+```bash
+./desconectar_runner_vm.sh
+```
+
+Conectar o runner da VM novamente:
+
+```bash
+./conectar_runner_vm.sh
+```
+
+Ver status do runner:
+
+```bash
+./status_runner_vm.sh
+```
+
+Para usar outra VM rapidamente, passe IP e usuário:
+
+```bash
+./conectar_runner_vm.sh 177.44.248.83 univates
+./desconectar_runner_vm.sh 177.44.248.83 univates
+./status_runner_vm.sh 177.44.248.83 univates
+```
+
+Também é possível usar variáveis:
+
+```bash
+VM_HOST=177.44.248.83 VM_USER=univates ./conectar_runner_vm.sh
 ```

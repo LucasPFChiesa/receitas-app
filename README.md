@@ -151,7 +151,7 @@ Depois da preparacao, subir os ambientes:
 
 ```bash
 cd ~/receitas-app
-./subir_vm.sh
+./subir_homolog_prod.sh
 docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
@@ -190,7 +190,7 @@ docker image prune -f
 Subir ambientes:
 
 ```bash
-./subir_vm.sh
+./subir_homolog_prod.sh
 docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
@@ -208,7 +208,7 @@ A produção só muda quando o job `production` for aprovado no GitHub, ou quand
 Para derrubar os ambientes:
 
 ```bash
-./derrubar_vm.sh
+./derrubar_homolog_prod.sh
 ```
 
 ## Estrutura do banco de dados

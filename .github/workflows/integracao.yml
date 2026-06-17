@@ -71,3 +71,32 @@ jobs:
           else
             sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
           fi
+
+  deploy-producao:
+    name: Aprovar deploy producao
+    needs: deploy-homologacao
+    runs-on: [self-hosted, receitas-app-vm]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/configurando-com-docker'
+    environment:
+      name: production
+      url: http://177.44.248.83:5000
+
+    steps:
+      - name: Baixar codigo aprovado
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Atualizar producao
+        run: |
+          set -e
+          export COMPOSE_PROJECT_NAME=receitas-app
+
+          sudo docker ps -aq --filter "name=receitas_app_prod" \
+            | xargs -r sudo docker rm -f
+
+          if sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          else
+            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          fi

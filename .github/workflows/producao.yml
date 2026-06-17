@@ -1,19 +1,12 @@
-name: Deploy Producao
+name: Deploy Producao Manual
 
 on:
-  workflow_run:
-    workflows:
-      - CI e Homologacao
-    types:
-      - completed
-    branches:
-      - configurando-com-docker
+  workflow_dispatch:
 
 jobs:
   deploy-producao:
     name: Aprovar deploy producao
     runs-on: [self-hosted, receitas-app-vm]
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     environment:
       name: production
       url: http://177.44.248.83:5000
@@ -21,8 +14,6 @@ jobs:
     steps:
       - name: Baixar codigo aprovado
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Atualizar producao
         run: |
