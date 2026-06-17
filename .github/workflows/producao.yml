@@ -32,9 +32,11 @@ jobs:
             | xargs -r sudo docker rm -f
 
           if sudo -n docker compose version >/dev/null 2>&1; then
-            sudo docker compose -f docker-compose.vm.yml --profile prod up -d prod
+            sudo env COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" APP_IMAGE="$APP_IMAGE" \
+              docker compose -f docker-compose.vm.yml --profile prod up -d prod
           else
-            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d prod
+            sudo env COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" APP_IMAGE="$APP_IMAGE" \
+              docker-compose -f docker-compose.vm.yml --profile prod up -d prod
           fi
 
           python3 - <<'PY'

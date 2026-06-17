@@ -38,9 +38,9 @@ if docker ps >/dev/null 2>&1; then
   fi
 elif sudo -n docker ps >/dev/null 2>&1; then
   if sudo -n docker compose version >/dev/null 2>&1; then
-    sudo docker compose -f "$COMPOSE_FILE" --profile prod up -d homolog prod
+    sudo env APP_IMAGE="$APP_IMAGE" docker compose -f "$COMPOSE_FILE" --profile prod up -d homolog prod
   else
-    sudo docker-compose -f "$COMPOSE_FILE" --profile prod up -d homolog prod
+    sudo env APP_IMAGE="$APP_IMAGE" docker-compose -f "$COMPOSE_FILE" --profile prod up -d homolog prod
   fi
 else
   echo "Sem permissao para acessar Docker" >&2
