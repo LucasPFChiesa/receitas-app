@@ -1,7 +1,6 @@
 services:
   homolog:
-    build: .
-    image: receitas-app:${APP_VERSION:-latest}
+    image: ${APP_IMAGE:-receitas-app:manual}
     container_name: receitas_app_homolog
     restart: unless-stopped
     environment:
@@ -13,8 +12,7 @@ services:
       - homolog_data:/data
 
   prod:
-    build: .
-    image: receitas-app:${APP_VERSION:-latest}
+    image: ${APP_IMAGE:-receitas-app:manual}
     container_name: receitas_app_prod
     restart: unless-stopped
     environment:

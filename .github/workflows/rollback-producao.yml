@@ -1,29 +1,34 @@
-name: Deploy Producao Manual
+name: Rollback Producao
 
 on:
   workflow_dispatch:
+    inputs:
+      image_sha:
+        description: "SHA da imagem ja aprovada para voltar em producao"
+        required: true
+        type: string
 
 permissions:
   contents: read
   packages: read
 
 jobs:
-  deploy-producao:
-    name: Aprovar deploy producao
+  rollback-producao:
+    name: Rollback producao
     runs-on: [self-hosted, receitas-app-vm]
     environment:
       name: production
       url: http://177.44.248.83:5000
 
     steps:
-      - name: Baixar codigo aprovado
+      - name: Baixar codigo do workflow
         uses: actions/checkout@v4
 
-      - name: Atualizar producao
+      - name: Aplicar rollback
         run: |
           set -e
           export COMPOSE_PROJECT_NAME=receitas-app
-          export APP_IMAGE="ghcr.io/lucaspfchiesa/receitas-app:${{ github.sha }}"
+          export APP_IMAGE="ghcr.io/lucaspfchiesa/receitas-app:${{ inputs.image_sha }}"
 
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           sudo docker pull "$APP_IMAGE"
@@ -50,6 +55,6 @@ jobs:
                           sys.exit(0)
               except Exception:
                   time.sleep(2)
-          print("Producao nao respondeu em http://127.0.0.1:5000/login", file=sys.stderr)
+          print("Rollback falhou: producao nao respondeu em http://127.0.0.1:5000/login", file=sys.stderr)
           sys.exit(1)
           PY

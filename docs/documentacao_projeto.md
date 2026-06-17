@@ -164,23 +164,28 @@ sudo apt install -y git docker.io docker-compose curl
 sudo systemctl enable --now docker
 git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-docker compose -f docker-compose.vm.yml build homolog prod
+APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
 ```
 
-Depois, suba homologação ou produção com `docker compose`.
+Depois, suba homologação ou produção com uma imagem manual ou com uma imagem ja publicada no GHCR.
 
 Para o deploy automático funcionar pelo GitHub Actions, a VM possui um self-hosted runner instalado como serviço com o label `receitas-app-vm`.
 
 Com isso, os jobs de deploy rodam dentro da própria VM e executam Docker localmente. O ambiente `production` deve ter aprovação obrigatória em `Settings -> Environments`.
 
-O deploy automático não chama scripts de atualização; o runner da VM baixa o commit aprovado e executa Docker diretamente na VM.
+O deploy automático não chama scripts de atualização; o runner da VM baixa a imagem do commit aprovada no GHCR e executa Docker diretamente na VM.
 
-## Comandos da VM
+## Comandos principais
 
 ```bash
 docker compose up -d --build dev
-docker compose -f docker-compose.vm.yml up -d --build homolog
-docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+```
+
+Na VM, homologação e produção usam uma imagem ja publicada no GHCR:
+
+```bash
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT sudo docker-compose -f docker-compose.vm.yml up -d homolog
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT sudo docker-compose -f docker-compose.vm.yml --profile prod up -d prod
 docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 

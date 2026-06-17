@@ -56,10 +56,10 @@ Fluxo usado no trabalho:
 2. Enviar as alterações para o GitHub.
 3. A integração, usando GitHub Actions, valida o repositório no GitHub.
 4. A integração instala dependências, executa linter, mess detector e testes.
-5. Se tudo passar, a integração valida o build Docker.
-6. Se tudo passar, o GitHub atualiza a homologação automaticamente.
+5. Se tudo passar, a integração constrói e publica uma imagem Docker com a tag do SHA do commit.
+6. Se tudo passar, o runner da VM atualiza a homologação automaticamente com essa imagem.
 7. Produção fica aguardando aprovação manual no GitHub.
-8. A VM pode ser preparada com comandos Docker e Git diretamente.
+8. Depois da aprovação, produção usa a mesma imagem que passou em homologação.
 
 Arquivos principais desse fluxo:
 
@@ -105,6 +105,7 @@ Ela executa:
 - Mess detector com `radon`
 - Testes com `pytest`
 - Build Docker
+- Publicação da imagem do commit no GHCR
 - Deploy automático em homologação
 - Deploy em produção com aprovação manual
 
@@ -116,7 +117,17 @@ O deploy roda em um GitHub Actions self-hosted runner instalado na VM com o labe
 
 Para produção ter botão de aprovação, configure o ambiente `production` em `Settings -> Environments` com revisor obrigatório.
 
-O deploy automático não depende de scripts `.sh`. O runner da VM baixa o commit exato aprovado pelo workflow e atualiza o container localmente.
+O deploy automático não depende de scripts `.sh`. O runner da VM baixa a imagem do commit no GHCR e atualiza o container localmente. Homologação e produção usam a mesma imagem:
+
+```text
+ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT
+```
+
+Para produção realmente aguardar aprovação, configure:
+
+```text
+Settings -> Environments -> production -> Required reviewers
+```
 
 O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
@@ -144,7 +155,7 @@ sudo apt install -y git docker.io docker-compose curl
 sudo systemctl enable --now docker
 git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-docker compose -f docker-compose.vm.yml build homolog prod
+APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
 ```
 
 Depois da preparacao, subir os ambientes:
@@ -158,9 +169,7 @@ docker compose -f docker-compose.vm.yml --profile prod ps
 Atualizar depois de um novo push:
 
 ```bash
-git pull
-docker compose -f docker-compose.vm.yml up -d --build homolog
-docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+git push
 ```
 
 ## Comandos da VM
@@ -177,7 +186,7 @@ sudo apt install -y git docker.io docker-compose curl
 sudo systemctl enable --now docker
 git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-docker compose -f docker-compose.vm.yml build homolog prod
+APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
 ```
 
 Limpar Docker:
@@ -199,8 +208,7 @@ Se o professor pedir para alterar um caractere, o fluxo principal é fazer commi
 Para atualizar homologação manualmente pela VM:
 
 ```bash
-git pull
-docker compose -f docker-compose.vm.yml up -d --build homolog
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./subir_homolog_prod.sh
 ```
 
 A produção só muda quando o job `production` for aprovado no GitHub, ou quando o comando de produção for executado manualmente na VM.
@@ -209,6 +217,19 @@ Para derrubar os ambientes:
 
 ```bash
 ./derrubar_homolog_prod.sh
+```
+
+Para verificar qual imagem está rodando:
+
+```bash
+sudo docker inspect receitas_app_homolog --format '{{.Config.Image}}'
+sudo docker inspect receitas_app_prod --format '{{.Config.Image}}'
+```
+
+Rollback de produção:
+
+```text
+Actions -> Rollback Producao -> Run workflow -> image_sha
 ```
 
 ## Estrutura do banco de dados

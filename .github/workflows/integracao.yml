@@ -6,6 +6,13 @@ on:
       - "**"
   pull_request:
 
+permissions:
+  contents: read
+  packages: write
+
+env:
+  APP_IMAGE: ghcr.io/lucaspfchiesa/receitas-app:${{ github.sha }}
+
 jobs:
   linter-messdetector-testes:
     name: Validar codigo
@@ -41,7 +48,15 @@ jobs:
         run: pytest -q
 
       - name: Validar build Docker
-        run: docker build -t receitas-app:ci .
+        run: docker build -t "$APP_IMAGE" .
+
+      - name: Login no GHCR
+        if: github.event_name == 'push'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publicar imagem do commit
+        if: github.event_name == 'push'
+        run: docker push "$APP_IMAGE"
 
   deploy-homologacao:
     name: Deploy homologacao
@@ -62,15 +77,45 @@ jobs:
         run: |
           set -e
           export COMPOSE_PROJECT_NAME=receitas-app
+          export APP_IMAGE="${{ env.APP_IMAGE }}"
+
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          sudo docker pull "$APP_IMAGE"
 
           sudo docker ps -aq --filter "name=receitas_app_homolog" \
             | xargs -r sudo docker rm -f
 
           if sudo -n docker compose version >/dev/null 2>&1; then
-            sudo docker compose -f docker-compose.vm.yml up -d --build homolog
+            sudo docker compose -f docker-compose.vm.yml up -d homolog
           else
-            sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
+            sudo docker-compose -f docker-compose.vm.yml up -d homolog
           fi
+
+          python3 - <<'PY'
+          import sys
+          import time
+          import urllib.request
+
+          url = "http://127.0.0.1:5001/login"
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(url, timeout=3) as response:
+                      if response.status == 200:
+                          sys.exit(0)
+              except Exception:
+                  time.sleep(2)
+          print("Homologacao nao respondeu em http://127.0.0.1:5001/login", file=sys.stderr)
+          sys.exit(1)
+          PY
+
+          CURRENT_IMAGES="$(sudo docker ps --format '{{.Image}}' | sort -u)"
+          sudo docker images "ghcr.io/lucaspfchiesa/receitas-app" --format '{{.Repository}}:{{.Tag}}' \
+            | while read -r IMAGE; do
+                [ -z "$IMAGE" ] && continue
+                [ "$IMAGE" = "$APP_IMAGE" ] && continue
+                echo "$CURRENT_IMAGES" | grep -qx "$IMAGE" && continue
+                sudo docker rmi "$IMAGE" || true
+              done
 
   deploy-producao:
     name: Aprovar deploy producao
@@ -91,12 +136,42 @@ jobs:
         run: |
           set -e
           export COMPOSE_PROJECT_NAME=receitas-app
+          export APP_IMAGE="${{ env.APP_IMAGE }}"
+
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          sudo docker pull "$APP_IMAGE"
 
           sudo docker ps -aq --filter "name=receitas_app_prod" \
             | xargs -r sudo docker rm -f
 
           if sudo -n docker compose version >/dev/null 2>&1; then
-            sudo docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            sudo docker compose -f docker-compose.vm.yml --profile prod up -d prod
           else
-            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d prod
           fi
+
+          python3 - <<'PY'
+          import sys
+          import time
+          import urllib.request
+
+          url = "http://127.0.0.1:5000/login"
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(url, timeout=3) as response:
+                      if response.status == 200:
+                          sys.exit(0)
+              except Exception:
+                  time.sleep(2)
+          print("Producao nao respondeu em http://127.0.0.1:5000/login", file=sys.stderr)
+          sys.exit(1)
+          PY
+
+          CURRENT_IMAGES="$(sudo docker ps --format '{{.Image}}' | sort -u)"
+          sudo docker images "ghcr.io/lucaspfchiesa/receitas-app" --format '{{.Repository}}:{{.Tag}}' \
+            | while read -r IMAGE; do
+                [ -z "$IMAGE" ] && continue
+                [ "$IMAGE" = "$APP_IMAGE" ] && continue
+                echo "$CURRENT_IMAGES" | grep -qx "$IMAGE" && continue
+                sudo docker rmi "$IMAGE" || true
+              done
