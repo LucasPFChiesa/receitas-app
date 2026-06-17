@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
 COMPOSE_FILE="docker-compose.vm.yml"
 
 if docker ps >/dev/null 2>&1; then

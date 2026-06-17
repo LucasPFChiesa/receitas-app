@@ -68,7 +68,7 @@ Arquivos principais desse fluxo:
 - `Dockerfile`: imagem da aplicação Flask usando Gunicorn.
 - `docker-compose.yml`: ambiente de desenvolvimento local.
 - `docker-compose.vm.yml`: ambientes de homologação e produção na VM.
-- `docker-entrypoint.sh`: cria o banco SQLite automaticamente se ele ainda não existir.
+- `scripts/docker-entrypoint.sh`: cria o banco SQLite automaticamente se ele ainda não existir.
 - `requirements-dev.txt`: dependências usadas na integração para testes, linter e mess detector.
 
 ## Como rodar com Docker
@@ -150,19 +150,16 @@ git push
 Na VM limpa, preparar o projeto:
 
 ```bash
-sudo apt update
-sudo apt install -y git docker.io docker-compose curl
-sudo systemctl enable --now docker
-git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+./scripts/start.sh
 ```
 
 Depois da preparacao, subir os ambientes:
 
 ```bash
 cd ~/receitas-app
-./subir_homolog_prod.sh
+./scripts/subir_homolog_prod.sh
 docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
@@ -181,12 +178,9 @@ cd ~/receitas-app
 Preparar uma VM limpa:
 
 ```bash
-sudo apt update
-sudo apt install -y git docker.io docker-compose curl
-sudo systemctl enable --now docker
-git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
 cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./subir_homolog_prod.sh
+./scripts/start.sh
 ```
 
 Limpar Docker:
@@ -199,7 +193,7 @@ docker image prune -f
 Subir ambientes:
 
 ```bash
-./subir_homolog_prod.sh
+./scripts/subir_homolog_prod.sh
 docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
@@ -208,7 +202,7 @@ Se o professor pedir para alterar um caractere, o fluxo principal é fazer commi
 Para atualizar homologação manualmente pela VM:
 
 ```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./subir_homolog_prod.sh
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
 ```
 
 A produção só muda quando o job `production` for aprovado no GitHub, ou quando o comando de produção for executado manualmente na VM.
@@ -216,7 +210,7 @@ A produção só muda quando o job `production` for aprovado no GitHub, ou quand
 Para derrubar os ambientes:
 
 ```bash
-./derrubar_homolog_prod.sh
+./scripts/derrubar_homolog_prod.sh
 ```
 
 Para verificar qual imagem está rodando:
