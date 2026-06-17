@@ -29,7 +29,7 @@ jobs:
         env:
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
+          cat > /tmp/deploy_producao.sh <<'EOF'
           set -e
           cd /home/univates/receitas-app
           GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
@@ -60,3 +60,11 @@ jobs:
             sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
           fi
           EOF
+
+          for attempt in 1 2 3 4 5; do
+            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" < /tmp/deploy_producao.sh; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          exit 1

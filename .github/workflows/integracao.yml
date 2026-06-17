@@ -63,7 +63,7 @@ jobs:
         env:
           DEPLOY_SHA: ${{ github.sha }}
         run: |
-          ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
+          cat > /tmp/deploy_homologacao.sh <<'EOF'
           set -e
           cd /home/univates/receitas-app
           GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
@@ -94,3 +94,11 @@ jobs:
             sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
           fi
           EOF
+
+          for attempt in 1 2 3 4 5; do
+            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" < /tmp/deploy_homologacao.sh; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          exit 1
