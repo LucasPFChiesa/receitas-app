@@ -62,7 +62,7 @@ jobs:
     name: Deploy homologacao
     needs: linter-messdetector-testes
     runs-on: [self-hosted, receitas-app-vm]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/integracao'
     environment:
       name: homologacao
       url: http://177.44.248.83:5001
