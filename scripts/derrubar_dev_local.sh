@@ -3,10 +3,20 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-if docker compose version >/dev/null 2>&1; then
+if docker ps >/dev/null 2>&1; then
+    DOCKER="docker"
+else
+    DOCKER="sudo docker"
+fi
+
+if $DOCKER compose version >/dev/null 2>&1; then
     COMPOSE="docker compose"
 else
-    COMPOSE="docker-compose"
+    if [ "$DOCKER" = "sudo docker" ]; then
+        COMPOSE="sudo docker-compose"
+    else
+        COMPOSE="docker-compose"
+    fi
 fi
 
 echo "Derrubando container de desenvolvimento..."

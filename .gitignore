@@ -15,8 +15,6 @@ htmlcov/
 keys/
 *.pem
 *.key
-subir_dev_local.sh
-derrubar_dev_local.sh
 
 # Banco e arquivos gerados localmente
 receitas.db
