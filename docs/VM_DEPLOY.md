@@ -5,6 +5,10 @@ Esta VM concentra os ambientes de execução do desenho:
 - Homologação: container `receitas_app_homolog`.
 - Produção: container `receitas_app_prod`.
 
+O desenvolvimento roda em outro container, no computador local:
+
+- Desenvolvimento: container `receitas_app_dev`.
+
 A integração principal fica no GitHub Actions:
 
 - https://github.com/LucasPFChiesa/receitas-app/actions
@@ -23,26 +27,20 @@ ssh univates@177.44.248.83
 
 ## 2. Preparar VM limpa
 
-Em uma VM limpa, o token do GitHub deve ficar fora da pasta do projeto, no arquivo `~/keys/github_token.txt`. O token precisa ter acesso ao repositório e permissão `Contents: Read and write`.
+Se a VM tiver o Compose antigo, use `docker-compose` no lugar de `docker compose`.
+
+Em uma VM limpa, instale as dependências, clone o projeto e prepare as imagens:
 
 ```bash
-mkdir -p ~/keys
-nano ~/keys/github_token.txt
-chmod 600 ~/keys/github_token.txt
+sudo apt update
+sudo apt install -y git docker.io docker-compose curl
+sudo systemctl enable --now docker
+git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+cd ~/receitas-app
+docker compose -f docker-compose.vm.yml build homolog prod
 ```
 
-Depois execute:
-
-```bash
-TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
-curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
-chmod +x preparar_vm.sh
-./preparar_vm.sh
-```
-
-Se o arquivo `preparar_vm.sh` já estiver na VM, basta executar `./preparar_vm.sh`.
-
-Esse script:
+Esses comandos:
 
 - instala Git, Docker e Docker Compose;
 - clona a branch `configurando-com-docker`;
@@ -64,7 +62,8 @@ A pasta da VM deve ter estes arquivos:
 - `.dockerignore`
 - `docker-entrypoint.sh`
 - `requirements-dev.txt`
-- `scripts/docker-compose.sh`
+- `subir_vm.sh`
+- `derrubar_vm.sh`
 
 ## 3. Testar homologacao
 
@@ -72,8 +71,8 @@ Na VM:
 
 ```bash
 cd ~/receitas-app
-sh scripts/subir_homologacao.sh
-sh scripts/status.sh
+docker compose -f docker-compose.vm.yml up -d --build homolog
+docker compose -f docker-compose.vm.yml ps
 ```
 
 Homologação:
@@ -94,8 +93,8 @@ Na VM:
 
 ```bash
 cd ~/receitas-app
-sh scripts/subir_producao.sh
-sh scripts/status.sh
+docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
 Produção:
@@ -118,12 +117,46 @@ Ela executa:
 2. Mess detector com `radon`.
 3. Testes com `pytest`.
 4. Build Docker.
+5. Atualização automática da homologação, se tudo passar.
+6. Atualização da produção somente depois de aprovação manual no GitHub.
+
+Para o deploy pelo GitHub funcionar, cadastre estes secrets no repositório:
+
+```text
+VM_HOST      -> 177.44.248.83
+VM_USER      -> univates
+VM_SSH_KEY   -> chave privada SSH que acessa a VM
+```
+
+O arquivo `~/keys/github_token.txt` deve existir na VM. Ele é usado pela própria VM para fazer `git fetch` autenticado no GitHub. Ele não substitui o secret `VM_SSH_KEY`, porque o GitHub Actions ainda precisa de uma chave SSH para abrir a conexão com a VM.
+
+Também configure o ambiente `production` no GitHub com aprovação obrigatória:
+
+```text
+Settings -> Environments -> New environment -> production
+```
+
+Depois, em `production`, adicione um revisor obrigatório. Assim o job de produção fica parado no GitHub até alguém clicar em aprovar.
+
+O deploy automático do GitHub não depende de scripts `.sh`; ele acessa a VM por SSH, busca a branch e faz checkout do commit exato do workflow antes de atualizar o container.
+
+O fluxo fica assim:
+
+```text
+git push
+  -> CI e Homologacao roda linter, mess detector, testes e build Docker
+  -> se passar, CI e Homologacao atualiza homologacao automaticamente
+  -> Deploy Producao inicia depois da CI e Homologacao concluida com sucesso
+  -> Deploy Producao fica aguardando aprovacao no ambiente production
+  -> depois da aprovacao, Deploy Producao atualiza o container de producao
+```
 
 Para atualizar homologação manualmente pela VM:
 
 ```bash
 cd ~/receitas-app
-scripts/atualizar_homologacao.sh
+git pull
+docker compose -f docker-compose.vm.yml up -d --build homolog
 ```
 
 ## 6. Resultado esperado
@@ -137,24 +170,41 @@ O GitHub Actions deve executar:
 5. Rodar `radon` como mess detector.
 6. Rodar `pytest`.
 7. Validar o build da imagem Docker.
+8. Atualizar homologação automaticamente.
+9. Aguardar aprovação no ambiente `production`.
+10. Atualizar produção se a aprovação for liberada.
 
 ## 7. Portas usadas
 
+- Desenvolvimento local: `5002`
 - Homologação: `5001`
 - Produção: `5000`
 
 Se a VM tiver firewall ou regra de nuvem, libere essas portas.
 
-## 8. Scripts prontos para apresentacao
+## 8. Bancos separados
+
+Cada ambiente usa seu próprio arquivo SQLite dentro de seu próprio volume Docker:
+
+```text
+dev        -> dev_data       -> /data/receitas_dev.db
+homolog    -> homolog_data   -> /data/receitas_homolog.db
+prod       -> prod_data      -> /data/receitas_prod.db
+```
+
+Com isso, um cadastro feito em desenvolvimento não aparece em homologação, e um teste feito em homologação não altera a produção.
+
+## 9. Comandos prontos para apresentacao
 
 Dicas antes da apresentacao:
 
 ```bash
 cd ~/receitas-app
-scripts/resetar_vm.sh
+docker compose -f docker-compose.vm.yml --profile prod down
+docker image prune -f
 ```
 
-Esse reset deixa a VM sem projeto e sem containers, mantendo o token em `~/keys/github_token.txt`.
+Esse comando derruba os containers e limpa imagens não usadas.
 
 Dentro da VM, na pasta do projeto:
 
@@ -165,35 +215,50 @@ cd ~/receitas-app
 Limpar Docker como o professor pediu:
 
 ```bash
-scripts/clean_docker_images.sh
+docker compose -f docker-compose.vm.yml --profile prod down
+docker image prune -f
 ```
 
 Subir homologação:
 
 ```bash
-scripts/subir_homologacao.sh
+docker compose -f docker-compose.vm.yml up -d --build homolog
 ```
 
 Subir produção:
 
 ```bash
-scripts/subir_producao.sh
+docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
 ```
 
 Depois de alterar algo e enviar para o GitHub, atualizar somente homologação:
 
 ```bash
-scripts/atualizar_homologacao.sh
+git pull
+docker compose -f docker-compose.vm.yml up -d --build homolog
 ```
 
-Produção só será atualizada se este comando for executado:
+Produção só será atualizada se este comando for executado manualmente ou se o job `production` for aprovado no GitHub:
 
 ```bash
-scripts/atualizar_producao.sh
+git pull
+docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
 ```
 
 Ver status:
 
 ```bash
-scripts/status.sh
+docker compose -f docker-compose.vm.yml --profile prod ps
+```
+
+Subir homologação e produção juntos:
+
+```bash
+./subir_vm.sh
+```
+
+Derrubar homologação e produção juntos:
+
+```bash
+./derrubar_vm.sh
 ```

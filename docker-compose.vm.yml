@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     environment:
       FLASK_ENV: homolog
-      DATABASE_PATH: /data/receitas.db
+      DATABASE_PATH: /data/receitas_homolog.db
     ports:
       - "5001:5000"
     volumes:
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     environment:
       FLASK_ENV: production
-      DATABASE_PATH: /data/receitas.db
+      DATABASE_PATH: /data/receitas_prod.db
     ports:
       - "5000:5000"
     volumes:

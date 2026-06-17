@@ -105,9 +105,9 @@ http://177.44.248.83:5000
 Cada ambiente usa um volume Docker próprio:
 
 ```text
-dev        -> dev_data
-homolog    -> homolog_data
-prod       -> prod_data
+dev        -> dev_data       -> /data/receitas_dev.db
+homolog    -> homolog_data   -> /data/receitas_homolog.db
+prod       -> prod_data      -> /data/receitas_prod.db
 ```
 
 Assim, dados cadastrados em desenvolvimento ou homologação não alteram o banco da produção.
@@ -129,54 +129,59 @@ Etapas:
 3. Executa mess detector com `radon`.
 4. Executa testes com `pytest`.
 5. Valida o build Docker.
+6. Atualiza homologação automaticamente.
+7. Aguarda aprovação manual para atualizar produção.
 
-Na VM, a preparação inicial é feita por um script único. Depois disso, homologação e produção são controladas por scripts separados.
+Na VM, a preparação inicial é feita com comandos Docker e Git. Depois disso, homologação e produção podem ser controladas manualmente com `docker compose`.
 
-Produção só é atualizada quando o script de produção for executado na VM.
+Produção só é atualizada quando o job do ambiente `production` for aprovado no GitHub, ou quando o comando de produção for executado manualmente na VM.
 
 ## Fluxo de uso
+
+Se a máquina tiver o Compose antigo, use `docker-compose` no lugar de `docker compose`.
 
 Desenvolvimento local:
 
 ```bash
-scripts/dev.sh
+docker compose up -d --build dev
 ```
 
 Enviar alterações:
 
 ```bash
-scripts/enviar_github.sh "Mensagem da alteracao"
+git add .
+git commit -m "Mensagem da alteracao"
+git push
 ```
 
 Após o push, o GitHub Actions valida o projeto.
 
-Na VM limpa, o token do GitHub fica fora do projeto, no arquivo `~/keys/github_token.txt`. Para baixar o script e preparar o projeto:
+Na VM limpa, prepare o projeto com Docker e Git:
 
 ```bash
-mkdir -p ~/keys
-nano ~/keys/github_token.txt
-chmod 600 ~/keys/github_token.txt
-TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
-curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
-chmod +x preparar_vm.sh
-./preparar_vm.sh
+sudo apt update
+sudo apt install -y git docker.io docker-compose curl
+sudo systemctl enable --now docker
+git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+cd ~/receitas-app
+docker compose -f docker-compose.vm.yml build homolog prod
 ```
 
-Se o script `preparar_vm.sh` já estiver na VM, execute somente `./preparar_vm.sh`.
+Depois, suba homologação ou produção com `docker compose`.
 
-Depois, subir homologação ou produção com os scripts próprios.
+Para o deploy automático funcionar pelo GitHub Actions, o repositório precisa ter os secrets `VM_HOST`, `VM_USER` e `VM_SSH_KEY`. O secret `VM_SSH_KEY` permite que o GitHub Actions entre na VM por SSH.
 
-## Scripts da VM
+O token em `~/keys/github_token.txt` fica na VM e é usado para o `git fetch` autenticado do repositório. O ambiente `production` deve ter aprovação obrigatória em `Settings -> Environments`.
+
+O deploy automático não chama scripts de atualização; o workflow acessa a VM por SSH, busca a branch, faz checkout do commit aprovado e executa Docker diretamente na VM.
+
+## Comandos da VM
 
 ```bash
-scripts/resetar_vm.sh
-scripts/subir_homologacao.sh
-scripts/atualizar_homologacao.sh
-scripts/derrubar_homologacao.sh
-scripts/subir_producao.sh
-scripts/atualizar_producao.sh
-scripts/derrubar_producao.sh
-scripts/status.sh
+docker compose up -d --build dev
+docker compose -f docker-compose.vm.yml up -d --build homolog
+docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
 ## Estrutura principal
@@ -194,7 +199,6 @@ requirements-dev.txt           dependências da integração
 templates/                     páginas HTML
 static/                        CSS
 tests/                         testes automatizados
-scripts/                       scripts operacionais
 .github/workflows/             GitHub Actions
 ```
 

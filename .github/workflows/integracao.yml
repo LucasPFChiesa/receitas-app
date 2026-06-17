@@ -1,4 +1,4 @@
-name: Integracao
+name: CI e Homologacao
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   linter-messdetector-testes:
-    name: Linter, mess detector e testes
+    name: Validar codigo
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +30,10 @@ jobs:
 
       - name: Mess detector
         run: |
+          if [ -n "$(radon cc app.py init_db.py tests -s -n C)" ]; then
+            radon cc app.py init_db.py tests -s -n C
+            exit 1
+          fi
           radon cc app.py init_db.py tests -s -a
           radon mi app.py init_db.py tests -s
 
@@ -38,3 +42,56 @@ jobs:
 
       - name: Validar build Docker
         run: docker build -t receitas-app:ci .
+
+  deploy-homologacao:
+    name: Deploy homologacao
+    needs: linter-messdetector-testes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/configurando-com-docker'
+    environment:
+      name: homologacao
+      url: http://177.44.248.83:5001
+
+    steps:
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_vm
+          chmod 600 ~/.ssh/id_vm
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Atualizar homologacao na VM
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
+          set -e
+          cd /home/univates/receitas-app
+          GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
+          if [ -s "$GITHUB_TOKEN_FILE" ]; then
+            ASKPASS="$(mktemp)"
+            trap 'rm -f "$ASKPASS"' EXIT
+            cat > "$ASKPASS" <<'ASKPASS_EOF'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) tr -d '\r\n' < "$HOME/keys/github_token.txt" ;;
+          esac
+          ASKPASS_EOF
+            chmod 700 "$ASKPASS"
+            GIT_ASKPASS="$ASKPASS" GIT_TERMINAL_PROMPT=0 git fetch origin configurando-com-docker
+          else
+            git fetch origin configurando-com-docker
+          fi
+          git checkout --detach "$DEPLOY_SHA"
+
+          if docker compose version >/dev/null 2>&1; then
+            docker compose -f docker-compose.vm.yml up -d --build homolog
+          elif command -v docker-compose >/dev/null 2>&1; then
+            docker-compose -f docker-compose.vm.yml up -d --build homolog
+          elif sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose -f docker-compose.vm.yml up -d --build homolog
+          else
+            sudo docker-compose -f docker-compose.vm.yml up -d --build homolog
+          fi
+          EOF

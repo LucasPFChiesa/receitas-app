@@ -1,0 +1,63 @@
+name: Deploy Producao
+
+on:
+  workflow_run:
+    workflows:
+      - CI e Homologacao
+    types:
+      - completed
+    branches:
+      - configurando-com-docker
+
+jobs:
+  deploy-producao:
+    name: Aprovar deploy producao
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    environment:
+      name: production
+      url: http://177.44.248.83:5000
+
+    steps:
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_vm
+          chmod 600 ~/.ssh/id_vm
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Atualizar producao na VM
+        env:
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          ssh -i ~/.ssh/id_vm "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" "DEPLOY_SHA='${DEPLOY_SHA}' bash -s" <<'EOF'
+          set -e
+          cd /home/univates/receitas-app
+          GITHUB_TOKEN_FILE="$HOME/keys/github_token.txt"
+          if [ -s "$GITHUB_TOKEN_FILE" ]; then
+            ASKPASS="$(mktemp)"
+            trap 'rm -f "$ASKPASS"' EXIT
+            cat > "$ASKPASS" <<'ASKPASS_EOF'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) tr -d '\r\n' < "$HOME/keys/github_token.txt" ;;
+          esac
+          ASKPASS_EOF
+            chmod 700 "$ASKPASS"
+            GIT_ASKPASS="$ASKPASS" GIT_TERMINAL_PROMPT=0 git fetch origin configurando-com-docker
+          else
+            git fetch origin configurando-com-docker
+          fi
+          git checkout --detach "$DEPLOY_SHA"
+
+          if docker compose version >/dev/null 2>&1; then
+            docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          elif command -v docker-compose >/dev/null 2>&1; then
+            docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          elif sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          else
+            sudo docker-compose -f docker-compose.vm.yml --profile prod up -d --build prod
+          fi
+          EOF

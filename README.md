@@ -8,7 +8,7 @@ Aplicação web simples em Flask + SQLite para cadastro, login, listagem e CRUD 
 
 ## Como executar localmente
 ```bash
-sh scripts/docker-compose.sh up -d dev
+docker compose up -d --build dev
 ```
 
 A aplicação ficará disponível em:
@@ -57,12 +57,14 @@ Fluxo usado no trabalho:
 3. A integração, usando GitHub Actions, valida o repositório no GitHub.
 4. A integração instala dependências, executa linter, mess detector e testes.
 5. Se tudo passar, a integração valida o build Docker.
-6. A VM é preparada com um script único.
-7. Homologação e produção são iniciadas por scripts separados.
+6. Se tudo passar, o GitHub atualiza a homologação automaticamente.
+7. Produção fica aguardando aprovação manual no GitHub.
+8. A VM pode ser preparada com comandos Docker e Git diretamente.
 
 Arquivos principais desse fluxo:
 
 - `.github/workflows/integracao.yml`: pipeline com linter, mess detector e testes.
+- `.github/workflows/producao.yml`: pipeline de produção, iniciado depois da integração e aguardando aprovação.
 - `Dockerfile`: imagem da aplicação Flask usando Gunicorn.
 - `docker-compose.yml`: ambiente de desenvolvimento local.
 - `docker-compose.vm.yml`: ambientes de homologação e produção na VM.
@@ -71,17 +73,27 @@ Arquivos principais desse fluxo:
 
 ## Como rodar com Docker
 
+Se sua máquina tiver o Compose antigo, use `docker-compose` no lugar de `docker compose`.
+
 Ambiente de desenvolvimento no seu PC:
 ```bash
-sh scripts/docker-compose.sh up -d dev
+docker compose up -d --build dev
 ```
 
 A aplicação de desenvolvimento fica disponível em:
 - http://localhost:5002
 
-Você continua editando os arquivos normalmente no VS Code. O container `dev` usa volume `.:/app`, então as alterações feitas no PC aparecem dentro do container.
+Você continua editando os arquivos normalmente no VS Code. O container `receitas_app_dev` usa volume `.:/app`, então as alterações feitas no PC aparecem dentro do container.
 
 Homologação e produção não são executadas no PC. Elas usam `docker-compose.vm.yml` e ficam apenas na VM.
+
+Cada ambiente usa um banco separado:
+
+```text
+dev        -> /data/receitas_dev.db
+homolog    -> /data/receitas_homolog.db
+prod       -> /data/receitas_prod.db
+```
 
 ## Integração
 
@@ -93,10 +105,20 @@ Ela executa:
 - Mess detector com `radon`
 - Testes com `pytest`
 - Build Docker
+- Deploy automático em homologação
+- Deploy em produção com aprovação manual
 
 Página da integração:
 
 - https://github.com/LucasPFChiesa/receitas-app/actions
+
+Para o deploy funcionar, configure no GitHub os secrets `VM_HOST`, `VM_USER` e `VM_SSH_KEY`. O secret `VM_SSH_KEY` é a chave que permite ao GitHub Actions entrar na VM por SSH.
+
+Na VM, mantenha o token do GitHub em `~/keys/github_token.txt`. O workflow usa esse arquivo dentro da VM para buscar a branch no GitHub antes de atualizar os containers.
+
+Para produção ter botão de aprovação, configure o ambiente `production` em `Settings -> Environments` com revisor obrigatório.
+
+O deploy automático não depende de scripts `.sh`. O GitHub acessa a VM por SSH, busca a branch e faz checkout do commit exato que passou no workflow antes de atualizar o container.
 
 O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 
@@ -105,43 +127,45 @@ O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
 No PC, subir desenvolvimento:
 
 ```bash
-scripts/dev.sh
+docker compose up -d --build dev
 ```
 
 Depois de alterar algo no projeto, enviar para o GitHub:
 
 ```bash
-scripts/enviar_github.sh "Ajusta detalhe da apresentacao"
+git add .
+git commit -m "Ajusta detalhe da apresentacao"
+git push
 ```
 
-Na VM limpa, baixar e executar o preparador:
+Na VM limpa, preparar o projeto:
 
 ```bash
-TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
-curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
-chmod +x preparar_vm.sh
-./preparar_vm.sh
+sudo apt update
+sudo apt install -y git docker.io docker-compose curl
+sudo systemctl enable --now docker
+git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+cd ~/receitas-app
+docker compose -f docker-compose.vm.yml build homolog prod
 ```
 
-Depois da preparacao, usar somente scripts:
+Depois da preparacao, subir os ambientes:
 
 ```bash
 cd ~/receitas-app
-scripts/subir_homologacao.sh
-scripts/subir_producao.sh
-scripts/status.sh
+./subir_vm.sh
+docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
 Atualizar depois de um novo push:
 
 ```bash
-scripts/atualizar_homologacao.sh
-scripts/atualizar_producao.sh
+git pull
+docker compose -f docker-compose.vm.yml up -d --build homolog
+docker compose -f docker-compose.vm.yml --profile prod up -d --build prod
 ```
 
-## Scripts da VM
-
-Os comandos principais ficam na pasta `scripts/`.
+## Comandos da VM
 
 ```bash
 cd ~/receitas-app
@@ -150,43 +174,43 @@ cd ~/receitas-app
 Preparar uma VM limpa:
 
 ```bash
-TOKEN="$(tr -d '\r\n' < ~/keys/github_token.txt)"
-curl -fsSL -H "Authorization: Bearer $TOKEN" https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/configurando-com-docker/scripts/preparar_vm.sh -o preparar_vm.sh
-chmod +x preparar_vm.sh
-./preparar_vm.sh
+sudo apt update
+sudo apt install -y git docker.io docker-compose curl
+sudo systemctl enable --now docker
+git clone --branch configurando-com-docker https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
+cd ~/receitas-app
+docker compose -f docker-compose.vm.yml build homolog prod
 ```
-
-O arquivo `~/keys/github_token.txt` fica fora do projeto e deve existir manualmente no PC e na VM.
 
 Limpar Docker:
 
 ```bash
-scripts/clean_docker_images.sh
+docker compose -f docker-compose.vm.yml --profile prod down
+docker image prune -f
 ```
 
 Subir ambientes:
 
 ```bash
-scripts/subir_homologacao.sh
-scripts/subir_producao.sh
-scripts/status.sh
+./subir_vm.sh
+docker compose -f docker-compose.vm.yml --profile prod ps
 ```
 
-Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub. Depois disso, a homologação só muda quando o script de atualização for executado na VM.
+Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub e atualiza homologação automaticamente se tudo passar.
 
 Para atualizar homologação manualmente pela VM:
 
 ```bash
-scripts/atualizar_homologacao.sh
+git pull
+docker compose -f docker-compose.vm.yml up -d --build homolog
 ```
 
-A produção só muda quando o script `scripts/atualizar_producao.sh` for executado na VM.
+A produção só muda quando o job `production` for aprovado no GitHub, ou quando o comando de produção for executado manualmente na VM.
 
 Para derrubar os ambientes:
 
 ```bash
-scripts/derrubar_homologacao.sh
-scripts/derrubar_producao.sh
+./derrubar_vm.sh
 ```
 
 ## Estrutura do banco de dados
