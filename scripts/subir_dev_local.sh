@@ -20,7 +20,10 @@ else
 fi
 
 echo "Subindo container de desenvolvimento..."
-$DOCKER rm -f receitas_app_dev >/dev/null 2>&1 || true
+DEV_CONTAINERS="$($DOCKER ps -aq --filter "name=receitas_app_dev")"
+if [ -n "$DEV_CONTAINERS" ]; then
+    $DOCKER rm -f $DEV_CONTAINERS >/dev/null 2>&1 || true
+fi
 $COMPOSE up -d --build --remove-orphans dev
 
 echo
