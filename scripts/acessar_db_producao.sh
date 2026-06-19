@@ -31,7 +31,7 @@ DATA_DIR="$(docker_cmd inspect "$CONTAINER_NAME" --format '{{range .Mounts}}{{if
 
 if [ -z "$DATA_DIR" ]; then
   echo "Container $CONTAINER_NAME nao encontrado."
-  echo "Suba producao com: ./scripts/subir_homolog_prod.sh"
+  echo "Suba producao com: bash ~/receitas-runtime/start.sh --skip-runner --only prod"
   exit 1
 fi
 

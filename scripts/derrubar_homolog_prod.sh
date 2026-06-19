@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+RUNTIME_DIR="${RUNTIME_DIR:-$HOME/receitas-runtime}"
 
-COMPOSE_FILE="docker-compose.vm.yml"
+if [ ! -f "$RUNTIME_DIR/docker-compose.yml" ]; then
+  echo "Runtime nao encontrado em $RUNTIME_DIR." >&2
+  echo "Nada foi derrubado." >&2
+  exit 0
+fi
+
+cd "$RUNTIME_DIR"
 
 if docker ps >/dev/null 2>&1; then
   if docker compose version >/dev/null 2>&1; then
-    docker compose -f "$COMPOSE_FILE" --profile prod stop homolog prod
+    docker compose --profile prod down
   else
-    docker-compose -f "$COMPOSE_FILE" --profile prod stop homolog prod
-  fi
-elif sudo -n docker ps >/dev/null 2>&1; then
-  if sudo -n docker compose version >/dev/null 2>&1; then
-    sudo docker compose -f "$COMPOSE_FILE" --profile prod stop homolog prod
-  else
-    sudo docker-compose -f "$COMPOSE_FILE" --profile prod stop homolog prod
+    docker-compose --profile prod down
   fi
 else
-  echo "Sem permissao para acessar Docker" >&2
-  exit 1
+  if sudo -n docker compose version >/dev/null 2>&1; then
+    sudo docker compose --profile prod down
+  else
+    sudo docker-compose --profile prod down
+  fi
 fi

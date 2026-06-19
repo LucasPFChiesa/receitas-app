@@ -1,403 +1,192 @@
 # Deploy na VM
 
-Esta VM concentra os ambientes de execução do desenho:
+Esta VM é ambiente de execução. Ela não precisa manter um clone permanente do código-fonte da aplicação.
 
-- Homologação: container `receitas_app_homolog`.
-- Produção: container `receitas_app_prod`.
+Ela precisa ter:
 
-O desenvolvimento roda em outro container, no computador local:
+- Docker;
+- GitHub Actions self-hosted runner;
+- pasta `~/receitas-runtime`;
+- imagens Docker publicadas no GHCR;
+- volumes Docker dos bancos SQLite.
 
-- Desenvolvimento: container `receitas_app_dev`.
+Ambientes:
 
-A integração principal fica no GitHub Actions:
+- Homologação: `http://177.44.248.83:5001`, container `receitas_app_homolog`.
+- Produção: `http://177.44.248.83:5000`, container `receitas_app_prod`.
 
-- https://github.com/LucasPFChiesa/receitas-app/actions
+## 1. Preparar a VM
 
-Dados da VM mostrada:
-
-- IP: `177.44.248.83`
-- Usuário SSH: `univates`
-- Pasta manual do projeto, quando você quiser usar os scripts `.sh`: `/home/univates/receitas-app`
-
-O deploy automático não depende dessa pasta manual. O self-hosted runner baixa o código no workspace interno dele a cada execução do GitHub Actions.
-
-## 1. Acessar a VM
+Entre na VM:
 
 ```bash
 ssh univates@177.44.248.83
 ```
 
-## 2. Preparar VM para uso manual
-
-Se a VM tiver o Compose antigo, use `docker-compose` no lugar de `docker compose`.
-
-Para preparar a VM a partir do zero, clone o projeto e rode o script principal:
+Baixe apenas o script de runtime:
 
 ```bash
-git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
-cd ~/receitas-app
-./scripts/start.sh
+mkdir -p ~/receitas-runtime
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/main/runtime/start.sh -o ~/receitas-runtime/start.sh
+chmod +x ~/receitas-runtime/start.sh
+bash ~/receitas-runtime/start.sh
 ```
 
-Esse script:
+O script pergunta os dados principais. Pode aceitar os padrões:
 
-- instala dependências básicas da VM;
-- configura ou recria o self-hosted runner;
-- cria uma imagem manual se nenhuma imagem for informada por `APP_IMAGE`;
-- inicia homologação e produção.
-
-Depois da preparação, entre na pasta:
-
-```bash
-cd ~/receitas-app
+```text
+Dono do repositorio: LucasPFChiesa
+Nome do repositorio: receitas-app
+Nome do runner: receitas-app-vm
+Labels: receitas-app-vm,homologacao,producao
+Arquivo do token: /home/univates/keys/github_token.txt
+IP publico: 177.44.248.83
 ```
 
-A pasta da VM deve ter estes arquivos:
+Ele faz:
 
-- `Dockerfile`
-- `docker-compose.yml`
-- `docker-compose.vm.yml`
-- `.dockerignore`
-- `scripts/docker-entrypoint.sh`
-- `requirements-dev.txt`
-- `scripts/start.sh`
-- `scripts/subir_homolog_prod.sh`
-- `scripts/derrubar_homolog_prod.sh`
+1. instala dependências básicas;
+2. configura ou recria o runner;
+3. gera `~/receitas-runtime/docker-compose.yml`;
+4. descobre a imagem mais recente da branch `integracao`;
+5. faz `docker pull`;
+6. sobe homologação e produção.
 
-## 3. Testar homologacao
+## 2. Verificar ambientes
 
 Na VM:
 
 ```bash
-cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./scripts/subir_homolog_prod.sh
-sudo docker-compose -f docker-compose.vm.yml ps
+cd ~/receitas-runtime
+docker compose --profile prod ps
 ```
 
-Homologação:
-
-```text
-http://177.44.248.83:5001
-```
-
-Teste pelo terminal da VM:
-
-```bash
-curl http://localhost:5001/login
-```
-
-## 4. Testar producao
-
-Na VM:
-
-```bash
-cd ~/receitas-app
-APP_IMAGE=receitas-app:manual ./scripts/subir_homolog_prod.sh
-sudo docker-compose -f docker-compose.vm.yml --profile prod ps
-```
-
-Produção:
-
-```text
-http://177.44.248.83:5000
-```
-
-## 5. Integração no GitHub Actions
-
-A integração roda automaticamente no GitHub quando você envia código:
-
-```bash
-git push
-```
-
-Ela executa:
-
-1. Linter com `pyflakes`.
-2. Mess detector com `radon`.
-3. Testes com `pytest`.
-4. Build Docker da imagem do commit.
-5. Publicação da imagem no GHCR com tag igual ao SHA do commit.
-6. Atualização automática da homologação, se tudo passar.
-7. Atualização da produção somente depois de aprovação manual no GitHub.
-
-Para o deploy pelo GitHub funcionar, a VM deve ter um self-hosted runner do GitHub Actions instalado como serviço. Neste projeto ele usa o nome `receitas-app-vm` e os labels:
-
-```text
-self-hosted
-receitas-app-vm
-homologacao
-producao
-```
-
-Com isso, o GitHub não precisa abrir SSH para a VM. O próprio runner da VM baixa o commit aprovado e executa Docker localmente.
-
-A imagem usada no deploy tem este formato:
-
-```text
-ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT
-```
-
-Homologação e produção usam a mesma imagem. A produção não reconstrói a aplicação; ela apenas faz `docker pull` da tag do SHA já validado em homologação.
-
-O workflow precisa destas permissões no próprio YAML:
-
-```yaml
-permissions:
-  contents: read
-  packages: write
-```
-
-Se o pacote do GHCR ficar privado, confirme no GitHub que o repositório tem acesso ao pacote:
-
-```text
-GitHub -> Packages -> receitas-app -> Package settings -> Manage Actions access
-```
-
-Também configure o ambiente `production` no GitHub com aprovação obrigatória:
-
-```text
-Settings -> Environments -> New environment -> production
-```
-
-Depois, em `production`, configure:
-
-```text
-Settings -> Environments -> production -> Required reviewers
-```
-
-Adicione o usuário que deve aprovar. Sem essa configuração, o job de produção pode iniciar automaticamente.
-
-O deploy automático do GitHub não depende de scripts `.sh`; o self-hosted runner da VM baixa a imagem exata do commit no GHCR e atualiza o container localmente.
-
-O fluxo fica assim:
-
-```text
-git push
-  -> CI e Homologacao roda linter, mess detector, testes e build Docker
-  -> se passar, o runner receitas-app-vm atualiza homologacao automaticamente
-  -> Deploy Producao inicia depois da CI e Homologacao concluida com sucesso
-  -> Deploy Producao fica aguardando aprovacao no ambiente production
-  -> depois da aprovacao, o runner receitas-app-vm atualiza o container de producao
-```
-
-## 6. Verificar SHA em cada ambiente
-
-Na VM:
-
-```bash
-sudo docker inspect receitas_app_homolog --format '{{.Config.Image}}'
-sudo docker inspect receitas_app_prod --format '{{.Config.Image}}'
-```
-
-Exemplo esperado:
-
-```text
-ghcr.io/lucaspfchiesa/receitas-app:12812da...
-```
-
-Ver status:
-
-```bash
-sudo docker-compose -f docker-compose.vm.yml --profile prod ps
-```
-
-Testar HTTP:
+Testar pelo terminal:
 
 ```bash
 curl http://localhost:5001/login
 curl http://localhost:5000/login
 ```
 
-Para atualizar homologação manualmente pela VM:
+Ver a imagem que cada ambiente está usando:
 
 ```bash
-cd ~/receitas-app
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
+sudo docker inspect receitas_app_homolog --format '{{.Config.Image}}'
+sudo docker inspect receitas_app_prod --format '{{.Config.Image}}'
 ```
 
-## 7. Resultado esperado
+## 3. Fluxo normal
 
-O GitHub Actions deve executar:
+No computador local:
 
-1. Buscar código no GitHub.
-2. Criar ambiente Python.
-3. Instalar `requirements-dev.txt`.
-4. Rodar `pyflakes`.
-5. Rodar `radon` como mess detector.
-6. Rodar `pytest`.
-7. Publicar a imagem Docker `ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT`.
-8. Atualizar homologação automaticamente com essa imagem.
-9. Validar HTTP de homologação.
-10. Aguardar aprovação no ambiente `production`.
-11. Atualizar produção com a mesma imagem se a aprovação for liberada.
-12. Validar HTTP de produção.
+```bash
+git add .
+git commit -m "Mensagem da alteracao"
+git push origin integracao
+```
 
-## 8. Portas usadas
+O workflow `CI e Homologacao` roda:
 
-- Desenvolvimento local: `5002`
-- Homologação: `5001`
-- Produção: `5000`
+1. linter com `pyflakes`;
+2. mess detector com `radon`;
+3. testes com `pytest`;
+4. build da imagem Docker;
+5. publicação no GHCR;
+6. atualização automática da homologação.
 
-Se a VM tiver firewall ou regra de nuvem, libere essas portas.
+Produção não muda nesse passo.
 
-## 9. Bancos separados
+## 4. Promover para produção
 
-Cada ambiente usa seu próprio arquivo SQLite dentro de seu próprio volume Docker:
+No GitHub:
 
 ```text
-dev        -> dev_data       -> /data/receitas_dev.db
-homolog    -> homolog_data   -> /data/receitas_homolog.db
-prod       -> prod_data      -> /data/receitas_prod.db
+Actions -> Promover Integracao para Producao -> Run workflow
 ```
 
-Com isso, um cadastro feito em desenvolvimento não aparece em homologação, e um teste feito em homologação não altera a produção.
+Depois aprove o ambiente `production` quando o GitHub pedir.
 
-## 10. Comandos prontos para apresentacao
+Esse workflow:
 
-Dicas antes da apresentacao:
+1. verifica se `integracao` tem alteração nova;
+2. faz merge de `integracao` na `main`;
+3. usa a mesma imagem que passou em homologação;
+4. atualiza o container `receitas_app_prod`.
+
+## 5. Rollback de produção
+
+Veja a imagem atual ou antiga:
 
 ```bash
-cd ~/receitas-app
-sudo docker-compose -f docker-compose.vm.yml --profile prod down
-sudo docker image prune -f
+sudo docker images 'ghcr.io/lucaspfchiesa/receitas-app'
 ```
 
-Esse comando derruba os containers e limpa imagens não usadas.
-
-Dentro da VM, na pasta do projeto:
-
-```bash
-cd ~/receitas-app
-```
-
-Limpar Docker como o professor pediu:
-
-```bash
-sudo docker-compose -f docker-compose.vm.yml --profile prod down
-sudo docker image prune -f
-```
-
-Se o professor pedir limpeza total da demonstração, removendo também os volumes:
-
-```bash
-sudo docker-compose -f docker-compose.vm.yml --profile prod down -v
-sudo docker image rm $(sudo docker images 'ghcr.io/lucaspfchiesa/receitas-app' -q) || true
-```
-
-Essa limpeza apaga os bancos dos volumes `homolog_data` e `prod_data`. Use somente quando isso for solicitado.
-
-Subir homologação:
-
-```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT sudo docker-compose -f docker-compose.vm.yml up -d homolog
-```
-
-Subir produção:
-
-```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT sudo docker-compose -f docker-compose.vm.yml --profile prod up -d prod
-```
-
-Depois de alterar algo e enviar para o GitHub, atualizar somente homologação:
-
-```bash
-git push
-```
-
-Produção só será atualizada se este comando for executado manualmente ou se o job `production` for aprovado no GitHub:
-
-```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT sudo docker-compose -f docker-compose.vm.yml --profile prod up -d prod
-```
-
-Ver status:
-
-```bash
-docker compose -f docker-compose.vm.yml --profile prod ps
-```
-
-Subir homologação e produção juntos:
-
-```bash
-./scripts/subir_homolog_prod.sh
-```
-
-Para usar uma imagem especifica ja publicada no GHCR:
-
-```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
-```
-
-Limpar imagens antigas do projeto sem apagar imagens em uso:
-
-```bash
-./scripts/clean_docker_images.sh
-```
-
-Depois da limpeza, para reconstruir tudo pela automação:
-
-```bash
-git push
-```
-
-O runner da VM recebe o job, baixa o código no workspace interno, faz pull da imagem do SHA e recria os containers.
-Se você não tiver alteração nova para commitar, também pode entrar em `Actions -> CI e Homologacao`, escolher uma execução/branch e usar `Re-run all jobs`.
-
-## 11. Rollback de producao
-
-O rollback usa o workflow manual:
+No GitHub:
 
 ```text
 Actions -> Rollback Producao -> Run workflow
 ```
 
-Informe o `image_sha` desejado, por exemplo:
+Preencha `image_sha` com a tag/SHA da imagem para voltar.
+
+## 6. Comandos manuais úteis
+
+Subir os dois ambientes com uma imagem específica:
+
+```bash
+cd ~/receitas-runtime
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only both
+```
+
+Subir só homologação:
+
+```bash
+cd ~/receitas-runtime
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only homolog
+```
+
+Subir só produção:
+
+```bash
+cd ~/receitas-runtime
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only prod
+```
+
+Derrubar os dois ambientes:
+
+```bash
+cd ~/receitas-runtime
+docker compose --profile prod down
+```
+
+Limpar imagens antigas não usadas:
+
+```bash
+sudo docker image prune -f
+```
+
+## 7. Bancos
+
+Cada ambiente tem seu próprio volume:
 
 ```text
-12812da...
+homologacao -> receitas-app_homolog_data -> /data/receitas_homolog.db
+producao    -> receitas-app_prod_data    -> /data/receitas_prod.db
 ```
 
-O workflow faz:
+Assim, testar dados em homologação não altera produção.
 
-- `docker pull ghcr.io/lucaspfchiesa/receitas-app:SHA`;
-- atualiza somente o container `receitas_app_prod`;
-- preserva o volume `prod_data`;
-- verifica `http://127.0.0.1:5000/login`.
+## 8. Roteiro da apresentação
 
-Derrubar homologação e produção juntos:
-
-```bash
-./scripts/derrubar_homolog_prod.sh
-```
-
-Desconectar o runner da VM do GitHub Actions:
-
-```bash
-./scripts/desconectar_runner_vm.sh
-```
-
-Conectar o runner da VM novamente:
-
-```bash
-./scripts/conectar_runner_vm.sh
-```
-
-Ver status do runner:
-
-```bash
-./scripts/status_runner_vm.sh
-```
-
-Para usar outra VM rapidamente, passe IP e usuário:
-
-```bash
-./scripts/conectar_runner_vm.sh 177.44.248.83 univates
-./scripts/desconectar_runner_vm.sh 177.44.248.83 univates
-./scripts/status_runner_vm.sh 177.44.248.83 univates
-```
-
-Também é possível usar variáveis:
-
-```bash
-VM_HOST=177.44.248.83 VM_USER=univates ./scripts/conectar_runner_vm.sh
-```
+1. Mostrar que a VM não tem clone permanente do código-fonte.
+2. Rodar o download do `runtime/start.sh`.
+3. Executar `bash ~/receitas-runtime/start.sh`.
+4. Mostrar homologação em `:5001`.
+5. Mostrar produção em `:5000`.
+6. Fazer mudança no código local.
+7. Commit e push na branch `integracao`.
+8. Mostrar `CI e Homologacao` rodando testes, qualidade e build.
+9. Mostrar homologação atualizada.
+10. Rodar `Promover Integracao para Producao`.
+11. Aprovar o ambiente `production`.
+12. Mostrar produção atualizada.

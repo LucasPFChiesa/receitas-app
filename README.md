@@ -64,10 +64,11 @@ Fluxo usado no trabalho:
 Arquivos principais desse fluxo:
 
 - `.github/workflows/integracao.yml`: pipeline com linter, mess detector e testes.
-- `.github/workflows/producao.yml`: pipeline de produção, iniciado depois da integração e aguardando aprovação.
+- `.github/workflows/promover-producao.yml`: botão manual para promover a integração aprovada para produção.
+- `.github/workflows/rollback-producao.yml`: botão manual para voltar a produção para uma imagem anterior.
 - `Dockerfile`: imagem da aplicação Flask usando Gunicorn.
 - `docker-compose.yml`: ambiente de desenvolvimento local.
-- `docker-compose.vm.yml`: ambientes de homologação e produção na VM.
+- `runtime/start.sh`: prepara a VM, configura o runner e sobe homologação/produção sem clone permanente do código.
 - `scripts/docker-entrypoint.sh`: cria o banco SQLite automaticamente se ele ainda não existir.
 - `requirements-dev.txt`: dependências usadas na integração para testes, linter e mess detector.
 
@@ -85,7 +86,7 @@ A aplicação de desenvolvimento fica disponível em:
 
 Você continua editando os arquivos normalmente no VS Code. O container `receitas_app_dev` usa volume `.:/app`, então as alterações feitas no PC aparecem dentro do container.
 
-Homologação e produção não são executadas no PC. Elas usam `docker-compose.vm.yml` e ficam apenas na VM.
+Homologação e produção não são executadas no PC. Elas rodam na VM a partir da imagem publicada no GHCR e do compose gerado em `~/receitas-runtime`.
 
 Cada ambiente usa um banco separado:
 
@@ -107,7 +108,7 @@ Ela executa:
 - Build Docker
 - Publicação da imagem do commit no GHCR
 - Deploy automático em homologação
-- Deploy em produção com aprovação manual
+- Promoção manual da integração para produção, com aprovação no ambiente `production`
 
 Página da integração:
 
@@ -117,7 +118,7 @@ O deploy roda em um GitHub Actions self-hosted runner instalado na VM com o labe
 
 Para produção ter botão de aprovação, configure o ambiente `production` em `Settings -> Environments` com revisor obrigatório.
 
-O deploy automático não depende de scripts `.sh`. O runner da VM baixa a imagem do commit no GHCR e atualiza o container localmente. Homologação e produção usam a mesma imagem:
+O deploy automático não mantém clone permanente do código-fonte na VM. A VM usa apenas Docker, runner, `~/receitas-runtime` e a imagem do commit no GHCR. Homologação e produção usam a mesma imagem:
 
 ```text
 ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT
@@ -147,20 +148,21 @@ git commit -m "Ajusta detalhe da apresentacao"
 git push
 ```
 
-Na VM limpa, preparar o projeto:
+Na VM limpa, preparar o runtime sem clonar o código-fonte:
 
 ```bash
-git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
-cd ~/receitas-app
-./scripts/start.sh
+mkdir -p ~/receitas-runtime
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/main/runtime/start.sh -o ~/receitas-runtime/start.sh
+chmod +x ~/receitas-runtime/start.sh
+bash ~/receitas-runtime/start.sh
 ```
 
-Depois da preparacao, subir os ambientes:
+Depois da preparacao, o próprio script já sobe os dois ambientes. Para trocar a imagem manualmente:
 
 ```bash
-cd ~/receitas-app
-./scripts/subir_homolog_prod.sh
-docker compose -f docker-compose.vm.yml --profile prod ps
+cd ~/receitas-runtime
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only both
+docker compose --profile prod ps
 ```
 
 Atualizar depois de um novo push:
@@ -172,29 +174,30 @@ git push
 ## Comandos da VM
 
 ```bash
-cd ~/receitas-app
+cd ~/receitas-runtime
 ```
 
 Preparar uma VM limpa:
 
 ```bash
-git clone --branch integracao https://github.com/LucasPFChiesa/receitas-app.git ~/receitas-app
-cd ~/receitas-app
-./scripts/start.sh
+mkdir -p ~/receitas-runtime
+curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/main/runtime/start.sh -o ~/receitas-runtime/start.sh
+chmod +x ~/receitas-runtime/start.sh
+bash ~/receitas-runtime/start.sh
 ```
 
 Limpar Docker:
 
 ```bash
-docker compose -f docker-compose.vm.yml --profile prod down
+docker compose --profile prod down
 docker image prune -f
 ```
 
 Subir ambientes:
 
 ```bash
-./scripts/subir_homolog_prod.sh
-docker compose -f docker-compose.vm.yml --profile prod ps
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only both
+docker compose --profile prod ps
 ```
 
 Se o professor pedir para alterar um caractere, o fluxo principal é fazer commit e push. A integração roda no GitHub e atualiza homologação automaticamente se tudo passar.
@@ -202,15 +205,16 @@ Se o professor pedir para alterar um caractere, o fluxo principal é fazer commi
 Para atualizar homologação manualmente pela VM:
 
 ```bash
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT ./scripts/subir_homolog_prod.sh
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash ~/receitas-runtime/start.sh --skip-runner --only homolog
 ```
 
-A produção só muda quando o job `production` for aprovado no GitHub, ou quando o comando de produção for executado manualmente na VM.
+A produção só muda quando você roda o workflow `Promover Integracao para Producao` no GitHub e aprova o ambiente `production`, ou quando o comando de produção for executado manualmente na VM.
 
 Para derrubar os ambientes:
 
 ```bash
-./scripts/derrubar_homolog_prod.sh
+cd ~/receitas-runtime
+docker compose --profile prod stop homolog prod
 ```
 
 Para verificar qual imagem está rodando:
