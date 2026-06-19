@@ -31,7 +31,7 @@ DATA_DIR="$(docker_cmd inspect "$CONTAINER_NAME" --format '{{range .Mounts}}{{if
 
 if [ -z "$DATA_DIR" ]; then
   echo "Container $CONTAINER_NAME nao encontrado."
-  echo "Suba producao com: bash ~/receitas-runtime/start.sh --skip-runner --only prod"
+  echo "Suba os ambientes com: bash scripts/iniciar_vm.sh"
   exit 1
 fi
 

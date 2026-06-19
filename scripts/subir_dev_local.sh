@@ -1,34 +1,54 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if docker ps >/dev/null 2>&1; then
-    DOCKER="docker"
-else
-    DOCKER="sudo docker"
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    echo "Uso: bash scripts/subir_dev_local.sh"
+    echo "Sobe o ambiente de desenvolvimento em http://localhost:5002"
+    exit 0
 fi
 
-if $DOCKER compose version >/dev/null 2>&1; then
-    COMPOSE="docker compose"
-else
-    if [ "$DOCKER" = "sudo docker" ]; then
-        COMPOSE="sudo docker-compose"
+docker_cmd() {
+    if docker ps >/dev/null 2>&1; then
+        docker "$@"
+    elif sudo -n docker ps >/dev/null 2>&1; then
+        sudo docker "$@"
     else
-        COMPOSE="docker-compose"
+        echo "Sem permissao para acessar Docker. Verifique se o Docker esta rodando e se seu usuario tem permissao." >&2
+        exit 1
     fi
-fi
+}
+
+compose_cmd() {
+    if docker ps >/dev/null 2>&1; then
+        if docker compose version >/dev/null 2>&1; then
+            docker compose "$@"
+        else
+            docker-compose "$@"
+        fi
+    elif sudo -n docker ps >/dev/null 2>&1; then
+        if sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose "$@"
+        else
+            sudo docker-compose "$@"
+        fi
+    else
+        echo "Sem permissao para acessar Docker. Verifique se o Docker esta rodando e se seu usuario tem permissao." >&2
+        exit 1
+    fi
+}
 
 echo "Subindo container de desenvolvimento..."
-DEV_CONTAINERS="$($DOCKER ps -aq --filter "name=receitas_app_dev")"
+DEV_CONTAINERS="$(docker_cmd ps -aq --filter "name=receitas_app_dev")"
 if [ -n "$DEV_CONTAINERS" ]; then
-    $DOCKER rm -f $DEV_CONTAINERS >/dev/null 2>&1 || true
+    docker_cmd rm -f $DEV_CONTAINERS >/dev/null 2>&1 || true
 fi
-$COMPOSE up -d --build --remove-orphans dev
+compose_cmd up -d --build --remove-orphans dev
 
 echo
 echo "Status:"
-$COMPOSE ps
+compose_cmd ps
 
 echo
 echo "Desenvolvimento:"

@@ -1,28 +1,37 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if docker ps >/dev/null 2>&1; then
-    DOCKER="docker"
-else
-    DOCKER="sudo docker"
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    echo "Uso: bash scripts/derrubar_dev_local.sh"
+    echo "Para e remove o container de desenvolvimento local."
+    exit 0
 fi
 
-if $DOCKER compose version >/dev/null 2>&1; then
-    COMPOSE="docker compose"
-else
-    if [ "$DOCKER" = "sudo docker" ]; then
-        COMPOSE="sudo docker-compose"
+compose_cmd() {
+    if docker ps >/dev/null 2>&1; then
+        if docker compose version >/dev/null 2>&1; then
+            docker compose "$@"
+        else
+            docker-compose "$@"
+        fi
+    elif sudo -n docker ps >/dev/null 2>&1; then
+        if sudo -n docker compose version >/dev/null 2>&1; then
+            sudo docker compose "$@"
+        else
+            sudo docker-compose "$@"
+        fi
     else
-        COMPOSE="docker-compose"
+        echo "Sem permissao para acessar Docker. Verifique se o Docker esta rodando e se seu usuario tem permissao." >&2
+        exit 1
     fi
-fi
+}
 
 echo "Derrubando container de desenvolvimento..."
-$COMPOSE stop dev
-$COMPOSE rm -f dev
+compose_cmd stop dev
+compose_cmd rm -f dev
 
 echo
 echo "Status:"
-$COMPOSE ps
+compose_cmd ps

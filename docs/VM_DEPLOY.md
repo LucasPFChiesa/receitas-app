@@ -15,7 +15,37 @@ Ambientes:
 - Homologação: `http://177.44.248.83:5001`, container `receitas_app_homolog`.
 - Produção: `http://177.44.248.83:5000`, container `receitas_app_prod`.
 
-## 1. Preparar a VM
+## 1. Preparar a VM pelo PC
+
+Os três scripts principais ficam no seu computador local e acessam a VM por SSH:
+
+```bash
+bash scripts/limpar_vm.sh
+bash scripts/enviar_vm.sh
+bash scripts/iniciar_vm.sh
+```
+
+Eles fazem:
+
+- `limpar_vm.sh`: limpa runner, runtime, containers, volumes e imagens do projeto na VM.
+- `enviar_vm.sh`: envia apenas `runtime/start.sh` para `~/receitas-runtime`.
+- `iniciar_vm.sh`: executa o runtime na VM, recria o runner e sobe homologação/produção.
+
+Para outra VM:
+
+```bash
+bash scripts/limpar_vm.sh IP_DA_VM USUARIO
+bash scripts/enviar_vm.sh IP_DA_VM USUARIO
+bash scripts/iniciar_vm.sh IP_DA_VM USUARIO
+```
+
+Para iniciar com uma imagem específica:
+
+```bash
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash scripts/iniciar_vm.sh
+```
+
+## 2. Preparar a VM manualmente
 
 Entre na VM:
 
@@ -52,7 +82,7 @@ Ele faz:
 5. faz `docker pull`;
 6. sobe homologação e produção.
 
-## 2. Verificar ambientes
+## 3. Verificar ambientes
 
 Na VM:
 
@@ -75,7 +105,7 @@ sudo docker inspect receitas_app_homolog --format '{{.Config.Image}}'
 sudo docker inspect receitas_app_prod --format '{{.Config.Image}}'
 ```
 
-## 3. Fluxo normal
+## 4. Fluxo normal
 
 No computador local:
 
@@ -96,7 +126,7 @@ O workflow `CI e Homologacao` roda:
 
 Produção não muda nesse passo.
 
-## 4. Promover para produção
+## 5. Promover para produção
 
 No GitHub:
 
@@ -113,7 +143,7 @@ Esse workflow:
 3. usa a mesma imagem que passou em homologação;
 4. atualiza o container `receitas_app_prod`.
 
-## 5. Rollback de produção
+## 6. Rollback de produção
 
 Veja a imagem atual ou antiga:
 
@@ -129,7 +159,7 @@ Actions -> Rollback Producao -> Run workflow
 
 Preencha `image_sha` com a tag/SHA da imagem para voltar.
 
-## 6. Comandos manuais úteis
+## 7. Comandos manuais úteis
 
 Subir os dois ambientes com uma imagem específica:
 
@@ -165,7 +195,7 @@ Limpar imagens antigas não usadas:
 sudo docker image prune -f
 ```
 
-## 7. Bancos
+## 8. Bancos
 
 Cada ambiente tem seu próprio volume:
 
@@ -176,7 +206,7 @@ producao    -> receitas-app_prod_data    -> /data/receitas_prod.db
 
 Assim, testar dados em homologação não altera produção.
 
-## 8. Roteiro da apresentação
+## 9. Roteiro da apresentação
 
 1. Mostrar que a VM não tem clone permanente do código-fonte.
 2. Rodar o download do `runtime/start.sh`.

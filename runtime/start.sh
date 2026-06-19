@@ -38,15 +38,36 @@ while [ "$#" -gt 0 ]; do
     --non-interactive) NON_INTERACTIVE="yes" ;;
     --skip-runner) CONFIGURE_RUNNER="no" ;;
     --skip-deps) INSTALL_DEPS="no" ;;
-    --image) APP_IMAGE="$2"; shift ;;
-    --only) DEPLOY_TARGET="$2"; shift ;;
-    --runtime-dir) RUNTIME_DIR="$2"; shift ;;
-    --public-host) PUBLIC_HOST="$2"; shift ;;
+    --image)
+      if [ "$#" -lt 2 ]; then echo "--image exige uma imagem Docker" >&2; exit 1; fi
+      APP_IMAGE="$2"
+      shift
+      ;;
+    --only)
+      if [ "$#" -lt 2 ]; then echo "--only exige homolog, prod ou both" >&2; exit 1; fi
+      DEPLOY_TARGET="$2"
+      shift
+      ;;
+    --runtime-dir)
+      if [ "$#" -lt 2 ]; then echo "--runtime-dir exige um diretorio" >&2; exit 1; fi
+      RUNTIME_DIR="$2"
+      shift
+      ;;
+    --public-host)
+      if [ "$#" -lt 2 ]; then echo "--public-host exige um host ou IP" >&2; exit 1; fi
+      PUBLIC_HOST="$2"
+      shift
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Opcao desconhecida: $1" >&2; usage; exit 1 ;;
   esac
   shift
 done
+
+case "$DEPLOY_TARGET" in
+  homolog|prod|both) ;;
+  *) echo "Destino invalido: $DEPLOY_TARGET. Use homolog, prod ou both." >&2; exit 1 ;;
+esac
 
 ask() {
   local label="$1"

@@ -148,21 +148,18 @@ git commit -m "Ajusta detalhe da apresentacao"
 git push
 ```
 
-Na VM limpa, preparar o runtime sem clonar o código-fonte:
+Na VM limpa, usando os scripts do seu PC:
 
 ```bash
-mkdir -p ~/receitas-runtime
-curl -fsSL https://raw.githubusercontent.com/LucasPFChiesa/receitas-app/main/runtime/start.sh -o ~/receitas-runtime/start.sh
-chmod +x ~/receitas-runtime/start.sh
-bash ~/receitas-runtime/start.sh
+bash scripts/limpar_vm.sh
+bash scripts/enviar_vm.sh
+bash scripts/iniciar_vm.sh
 ```
 
-Depois da preparacao, o próprio script já sobe os dois ambientes. Para trocar a imagem manualmente:
+Depois da preparacao, o próprio script já sobe os dois ambientes. Para trocar a imagem manualmente a partir do PC:
 
 ```bash
-cd ~/receitas-runtime
-APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash start.sh --skip-runner --only both
-docker compose --profile prod ps
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash scripts/iniciar_vm.sh
 ```
 
 Atualizar depois de um novo push:
@@ -171,7 +168,37 @@ Atualizar depois de um novo push:
 git push
 ```
 
-## Comandos da VM
+## Scripts principais da VM
+
+Estes comandos são executados no seu PC e controlam a VM por SSH:
+
+```bash
+bash scripts/limpar_vm.sh
+bash scripts/enviar_vm.sh
+bash scripts/iniciar_vm.sh
+```
+
+Função de cada um:
+
+- `scripts/limpar_vm.sh`: remove runner, runtime, containers, volumes e imagens deste projeto na VM.
+- `scripts/enviar_vm.sh`: envia somente `runtime/start.sh` para `~/receitas-runtime` na VM.
+- `scripts/iniciar_vm.sh`: executa o runtime na VM, recria runner e sobe homologação/produção.
+
+Para usar outro IP:
+
+```bash
+bash scripts/limpar_vm.sh IP_DA_VM USUARIO
+bash scripts/enviar_vm.sh IP_DA_VM USUARIO
+bash scripts/iniciar_vm.sh IP_DA_VM USUARIO
+```
+
+Para iniciar com uma imagem específica:
+
+```bash
+APP_IMAGE=ghcr.io/lucaspfchiesa/receitas-app:SHA_DO_COMMIT bash scripts/iniciar_vm.sh
+```
+
+## Comandos diretos na VM
 
 ```bash
 cd ~/receitas-runtime
