@@ -259,6 +259,43 @@ Actions -> Rollback Producao -> Run workflow -> image_sha
 
 ## Estrutura do banco de dados
 
+O banco é criado por `init_db.py` e atualizado por migrations versionadas na pasta `migrations/`.
+
+Quando o container inicia, `scripts/docker-entrypoint.sh` executa:
+
+```bash
+python init_db.py
+```
+
+Esse comando:
+
+- cria o banco com `schema.sql` e `seed.sql` se ele ainda não existir;
+- aplica automaticamente migrations pendentes em banco já existente;
+- registra migrations aplicadas na tabela `schema_migrations`;
+- preserva os dados já cadastrados.
+
+Para criar uma nova alteração de banco, crie um arquivo novo em `migrations/`:
+
+```text
+migrations/002_nome_da_alteracao.sql
+```
+
+Exemplo:
+
+```sql
+ALTER TABLE receita ADD COLUMN observacao TEXT;
+```
+
+Depois teste localmente e envie:
+
+```bash
+git add migrations/002_nome_da_alteracao.sql
+git commit -m "Adiciona migration de banco"
+git push origin integracao
+```
+
+No deploy, homologação aplica a migration automaticamente. Produção aplica quando você promover para produção.
+
 ### Tabela `usuario`
 Campos:
 - `id`
@@ -275,6 +312,14 @@ Campos:
 - `data_registro`
 - `custo`
 - `tipo_receita`
+
+### Tabela `categoria`
+Criada pela migration `001_create_categoria.sql`.
+
+Campos:
+- `id`
+- `nome`
+- `situacao`
 
 ## Usuário padrão para acesso
 

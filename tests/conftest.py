@@ -1,11 +1,11 @@
 import sys
-import sqlite3
 from pathlib import Path
 import tempfile
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import app as app_module
+import init_db
 
 
 def criar_banco_temporario():
@@ -13,15 +13,12 @@ def criar_banco_temporario():
     caminho_temp = Path(arquivo_temp.name)
     arquivo_temp.close()
 
-    conn = sqlite3.connect(caminho_temp)
-
-    schema = Path("schema.sql").read_text(encoding="utf-8")
-    seed = Path("seed.sql").read_text(encoding="utf-8")
-
-    conn.executescript(schema)
-    conn.executescript(seed)
-    conn.commit()
-    conn.close()
+    original_db_path = init_db.DB_PATH
+    init_db.DB_PATH = caminho_temp
+    try:
+        init_db.main()
+    finally:
+        init_db.DB_PATH = original_db_path
 
     return caminho_temp
 
@@ -30,6 +27,7 @@ def pytest_runtest_setup(item):
     banco_teste = criar_banco_temporario()
     item._banco_teste = banco_teste
     app_module.DB_PATH = banco_teste
+    init_db.DB_PATH = banco_teste
     app_module.app.config["TESTING"] = True
 
 

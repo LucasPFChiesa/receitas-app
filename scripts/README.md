@@ -19,3 +19,11 @@ Comandos auxiliares:
 - `acessar_db_dev.sh`: abre o SQLite do desenvolvimento.
 - `acessar_db_homolog.sh`: abre o SQLite da homologação.
 - `acessar_db_producao.sh`: abre o SQLite da produção.
+
+Dentro do SQLite, comandos úteis:
+
+```sql
+.tables
+.schema categoria
+SELECT * FROM schema_migrations;
+```

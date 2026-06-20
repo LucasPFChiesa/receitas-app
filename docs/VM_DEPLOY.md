@@ -206,6 +206,26 @@ producao    -> receitas-app_prod_data    -> /data/receitas_prod.db
 
 Assim, testar dados em homologação não altera produção.
 
+As alterações de estrutura do banco são feitas por migrations versionadas em:
+
+```text
+migrations/
+```
+
+Quando homologação ou produção sobem, o entrypoint do container executa `python init_db.py`.
+Esse comando cria o banco se ele não existir e aplica migrations pendentes se o banco já existir.
+
+Exemplo de fluxo para uma tabela nova:
+
+```bash
+touch migrations/002_cria_tabela_exemplo.sql
+git add migrations/002_cria_tabela_exemplo.sql
+git commit -m "Adiciona migration de exemplo"
+git push origin integracao
+```
+
+Depois do deploy, a homologação recebe a nova estrutura sem apagar os dados existentes.
+
 ## 9. Roteiro da apresentação
 
 1. Mostrar que a VM não tem clone permanente do código-fonte.
