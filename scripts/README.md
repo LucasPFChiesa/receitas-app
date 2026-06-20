@@ -17,8 +17,21 @@ Comandos auxiliares:
 - `subir_dev_local.sh`: sobe o ambiente de desenvolvimento local.
 - `derrubar_dev_local.sh`: derruba o ambiente de desenvolvimento local.
 - `acessar_db_dev.sh`: abre o SQLite do desenvolvimento.
-- `acessar_db_homolog.sh`: abre o SQLite da homologação.
-- `acessar_db_producao.sh`: abre o SQLite da produção.
+- `acessar_db_homolog.sh`: abre o SQLite da homologação na VM via SSH.
+- `acessar_db_producao.sh`: abre o SQLite da produção na VM via SSH.
+
+Você pode abrir o SQLite interativo:
+
+```bash
+bash scripts/acessar_db_homolog.sh
+```
+
+Ou executar um comando direto:
+
+```bash
+bash scripts/acessar_db_homolog.sh '.tables'
+bash scripts/acessar_db_homolog.sh 'SELECT * FROM schema_migrations;'
+```
 
 Dentro do SQLite, comandos úteis:
 

@@ -11,6 +11,12 @@ REPO_OWNER="${REPO_OWNER:-LucasPFChiesa}"
 REPO_NAME="${REPO_NAME:-receitas-app}"
 TOKEN_FILE="${TOKEN_FILE:-/home/${VM_USER}/keys/github_token.txt}"
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo "Uso: bash scripts/limpar_vm.sh [VM_HOST] [VM_USER]"
+  echo "Remove runtime, runner, containers, volumes e imagens do projeto na VM."
+  exit 0
+fi
+
 if ! command -v ssh >/dev/null 2>&1; then
   echo "Comando obrigatorio nao encontrado: ssh" >&2
   exit 1

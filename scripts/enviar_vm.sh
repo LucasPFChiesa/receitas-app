@@ -7,6 +7,12 @@ VM_HOST="${1:-${VM_HOST:-177.44.248.83}}"
 VM_USER="${2:-${VM_USER:-univates}}"
 RUNTIME_DIR="${RUNTIME_DIR:-/home/${VM_USER}/receitas-runtime}"
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo "Uso: bash scripts/enviar_vm.sh [VM_HOST] [VM_USER]"
+  echo "Envia runtime/start.sh para a pasta runtime da VM."
+  exit 0
+fi
+
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Comando obrigatorio nao encontrado: $1" >&2

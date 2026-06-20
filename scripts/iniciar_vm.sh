@@ -6,6 +6,15 @@ VM_USER="${2:-${VM_USER:-univates}}"
 RUNTIME_DIR="${RUNTIME_DIR:-/home/${VM_USER}/receitas-runtime}"
 APP_IMAGE_VALUE="${APP_IMAGE:-}"
 
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo "Uso: bash scripts/iniciar_vm.sh [VM_HOST] [VM_USER] [APP_IMAGE]"
+  echo "Recria/configura runner e sobe homologacao e producao na VM."
+  echo
+  echo "Exemplo com imagem especifica:"
+  echo "  bash scripts/iniciar_vm.sh 177.44.248.83 univates ghcr.io/lucaspfchiesa/receitas-app:SHA"
+  exit 0
+fi
+
 if ! command -v ssh >/dev/null 2>&1; then
   echo "Comando obrigatorio nao encontrado: ssh" >&2
   exit 1
