@@ -4,28 +4,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv('DATABASE_PATH', BASE_DIR / 'receitas.db'))
-SCHEMA_PATH = BASE_DIR / 'schema.sql'
-SEED_PATH = BASE_DIR / 'seed.sql'
 MIGRATIONS_DIR = BASE_DIR / 'migrations'
-
-
-def table_exists(conn, table_name):
-    row = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-        (table_name,),
-    ).fetchone()
-    return row is not None
-
-
-def initialize_database(conn):
-    if table_exists(conn, 'usuario') and table_exists(conn, 'receita'):
-        return False
-
-    with open(SCHEMA_PATH, 'r', encoding='utf-8') as f:
-        conn.executescript(f.read())
-    with open(SEED_PATH, 'r', encoding='utf-8') as f:
-        conn.executescript(f.read())
-    return True
 
 
 def ensure_migrations_table(conn):
@@ -67,16 +46,13 @@ def apply_migrations(conn):
 
 
 def main():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    initialized = initialize_database(conn)
     migrations = apply_migrations(conn)
     conn.commit()
     conn.close()
 
-    if initialized:
-        print('Banco criado e populado com sucesso em:', DB_PATH)
-    else:
-        print('Banco existente encontrado em:', DB_PATH)
+    print('Banco verificado com sucesso em:', DB_PATH)
 
     if migrations:
         print('Migrations aplicadas:', ', '.join(migrations))

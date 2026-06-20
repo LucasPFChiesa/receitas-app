@@ -167,8 +167,9 @@ O script prepara runner, Docker Compose runtime, homologação e produção.
 
 ```text
 app.py                         aplicação Flask
-schema.sql                     estrutura do banco
-seed.sql                       dados iniciais
+migrations/                    criação e evolução versionada do banco
+schema.sql                     referência da estrutura atual
+seed.sql                       referência dos dados iniciais
 init_db.py                     criação do banco
 Dockerfile                     imagem da aplicação
 docker-compose.yml             ambiente local de desenvolvimento

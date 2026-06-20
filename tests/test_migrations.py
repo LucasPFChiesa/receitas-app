@@ -3,6 +3,25 @@ import sqlite3
 import init_db
 
 
+def test_migration_base_cria_tabelas_principais():
+    conn = sqlite3.connect(init_db.DB_PATH)
+
+    tabelas = {
+        row[0]
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+    }
+    total_usuarios = conn.execute('SELECT COUNT(*) FROM usuario').fetchone()[0]
+    total_receitas = conn.execute('SELECT COUNT(*) FROM receita').fetchone()[0]
+    conn.close()
+
+    assert 'usuario' in tabelas
+    assert 'receita' in tabelas
+    assert total_usuarios == 1
+    assert total_receitas == 10
+
+
 def test_migration_cria_tabela_categoria():
     conn = sqlite3.connect(init_db.DB_PATH)
 
@@ -21,13 +40,15 @@ def test_migration_cria_tabela_categoria():
 def test_migration_registra_arquivo_aplicado():
     conn = sqlite3.connect(init_db.DB_PATH)
 
-    registro = conn.execute(
-        'SELECT filename FROM schema_migrations WHERE filename = ?',
-        ('001_create_categoria.sql',),
-    ).fetchone()
+    registros = conn.execute(
+        'SELECT filename FROM schema_migrations ORDER BY filename'
+    ).fetchall()
     conn.close()
 
-    assert registro is not None
+    assert [row[0] for row in registros] == [
+        '000_create_schema_inicial.sql',
+        '001_create_categoria.sql',
+    ]
 
 
 def test_migration_pode_rodar_novamente_sem_duplicar_dados():
@@ -38,14 +59,11 @@ def test_migration_pode_rodar_novamente_sem_duplicar_dados():
     conn.commit()
 
     total_categorias = conn.execute('SELECT COUNT(*) FROM categoria').fetchone()[0]
-    total_migrations = conn.execute(
-        'SELECT COUNT(*) FROM schema_migrations WHERE filename = ?',
-        ('001_create_categoria.sql',),
-    ).fetchone()[0]
+    total_migrations = conn.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]
     conn.close()
 
     assert total_categorias == 2
-    assert total_migrations == 1
+    assert total_migrations == 2
 
 
 def test_inicializador_preserva_banco_existente_ao_aplicar_migrations():

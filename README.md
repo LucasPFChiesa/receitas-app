@@ -20,8 +20,9 @@ A aplicação ficará disponível em:
 
 ## Estrutura principal
 - `app.py`: aplicação Flask
-- `schema.sql`: criação das tabelas
-- `seed.sql`: inserts iniciais
+- `migrations/`: criação e evolução versionada do banco
+- `schema.sql`: referência da estrutura atual do banco
+- `seed.sql`: referência dos dados iniciais
 - `init_db.py`: cria e popula o banco
 - `templates/`: páginas HTML
 - `static/style.css`: estilos visuais
@@ -259,7 +260,7 @@ Actions -> Rollback Producao -> Run workflow -> image_sha
 
 ## Estrutura do banco de dados
 
-O banco é criado por `init_db.py` e atualizado por migrations versionadas na pasta `migrations/`.
+O banco inteiro é criado e atualizado por migrations versionadas na pasta `migrations/`.
 
 Quando o container inicia, `scripts/docker-entrypoint.sh` executa:
 
@@ -269,10 +270,17 @@ python init_db.py
 
 Esse comando:
 
-- cria o banco com `schema.sql` e `seed.sql` se ele ainda não existir;
+- cria o banco inteiro aplicando as migrations em ordem;
 - aplica automaticamente migrations pendentes em banco já existente;
 - registra migrations aplicadas na tabela `schema_migrations`;
 - preserva os dados já cadastrados.
+
+As migrations atuais são:
+
+```text
+000_create_schema_inicial.sql -> cria usuario, receita e dados iniciais
+001_create_categoria.sql      -> cria categoria e dados iniciais
+```
 
 Para criar uma nova alteração de banco, crie um arquivo novo em `migrations/`:
 

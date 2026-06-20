@@ -1,5 +1,20 @@
--- Arquivo de referencia.
--- Os dados iniciais oficiais ficam versionados em migrations/.
+CREATE TABLE IF NOT EXISTS usuario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    login TEXT NOT NULL UNIQUE,
+    senha TEXT NOT NULL,
+    situacao TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS receita (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    descricao TEXT NOT NULL,
+    data_registro TEXT NOT NULL,
+    custo REAL NOT NULL,
+    tipo_receita TEXT NOT NULL CHECK (tipo_receita IN ('doce', 'salgada')),
+    status TEXT NOT NULL CHECK (status IN ('ativa', 'inativa'))
+);
 
 INSERT OR IGNORE INTO usuario (id, nome, login, senha, situacao) VALUES
 (1, 'Administrador', 'admin', 'admin123', 'ativo');
@@ -17,7 +32,3 @@ VALUES
 (8, 'Pastel de Carne', 'Pastel frito recheado com carne moída temperada.', '2026-03-31', 33.20, 'salgada', 'ativa'),
 (9, 'Empada de Frango', 'Massa amanteigada com recheio de frango.', '2026-03-31', 31.00, 'salgada', 'ativa'),
 (10, 'Pão de Queijo', 'Bolinhas assadas com polvilho e queijo.', '2026-03-31', 19.80, 'salgada', 'ativa');
-
-INSERT OR IGNORE INTO categoria (id, nome, situacao) VALUES
-(1, 'Doce', 'ativa'),
-(2, 'Salgada', 'ativa');

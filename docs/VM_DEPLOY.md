@@ -206,14 +206,21 @@ producao    -> receitas-app_prod_data    -> /data/receitas_prod.db
 
 Assim, testar dados em homologação não altera produção.
 
-As alterações de estrutura do banco são feitas por migrations versionadas em:
+O banco inteiro e as alterações futuras são controlados por migrations versionadas em:
 
 ```text
 migrations/
 ```
 
 Quando homologação ou produção sobem, o entrypoint do container executa `python init_db.py`.
-Esse comando cria o banco se ele não existir e aplica migrations pendentes se o banco já existir.
+Esse comando aplica as migrations em ordem, cria o banco se ele não existir e aplica somente o que ainda está pendente se o banco já existir.
+
+Migrations atuais:
+
+```text
+000_create_schema_inicial.sql -> usuario, receita e dados iniciais
+001_create_categoria.sql      -> categoria e dados iniciais
+```
 
 Exemplo de fluxo para uma tabela nova:
 
