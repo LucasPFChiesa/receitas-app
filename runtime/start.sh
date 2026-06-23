@@ -145,6 +145,7 @@ services:
     environment:
       FLASK_ENV: homolog
       DATABASE_PATH: /data/receitas_homolog.db
+      SECRET_KEY: ${SECRET_KEY}
     ports:
       - "5001:5000"
     volumes:
@@ -157,6 +158,7 @@ services:
     environment:
       FLASK_ENV: production
       DATABASE_PATH: /data/receitas_prod.db
+      SECRET_KEY: ${SECRET_KEY}
     ports:
       - "5000:5000"
     volumes:
@@ -168,6 +170,16 @@ volumes:
   homolog_data:
   prod_data:
 YAML
+}
+
+write_runtime_env() {
+  mkdir -p "$RUNTIME_DIR"
+  if [ ! -f "$RUNTIME_DIR/.env" ]; then
+    local secret_key
+    secret_key="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+    printf "SECRET_KEY=%s\n" "$secret_key" > "$RUNTIME_DIR/.env"
+    chmod 600 "$RUNTIME_DIR/.env"
+  fi
 }
 
 load_token() {
@@ -320,6 +332,7 @@ clean_old_images() {
 
 deploy() {
   write_compose
+  write_runtime_env
   cd "$RUNTIME_DIR"
 
   if [ -z "$APP_IMAGE" ]; then

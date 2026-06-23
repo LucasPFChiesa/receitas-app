@@ -219,14 +219,13 @@ Migrations atuais:
 
 ```text
 000_create_schema_inicial.sql -> usuario, receita e dados iniciais
-001_create_categoria.sql      -> categoria e dados iniciais
 ```
 
 Exemplo de fluxo para uma tabela nova:
 
 ```bash
-touch migrations/002_cria_tabela_exemplo.sql
-git add migrations/002_cria_tabela_exemplo.sql
+touch migrations/001_cria_tabela_exemplo.sql
+git add migrations/001_cria_tabela_exemplo.sql
 git commit -m "Adiciona migration de exemplo"
 git push origin integracao
 ```

@@ -17,7 +17,3 @@ VALUES
 (8, 'Pastel de Carne', 'Pastel frito recheado com carne moída temperada.', '2026-03-31', 33.20, 'salgada', 'ativa'),
 (9, 'Empada de Frango', 'Massa amanteigada com recheio de frango.', '2026-03-31', 31.00, 'salgada', 'ativa'),
 (10, 'Pão de Queijo', 'Bolinhas assadas com polvilho e queijo.', '2026-03-31', 19.80, 'salgada', 'ativa');
-
-INSERT OR IGNORE INTO categoria (id, nome, situacao) VALUES
-(1, 'Doce', 'ativa'),
-(2, 'Salgada', 'ativa');

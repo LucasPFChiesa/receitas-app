@@ -19,12 +19,6 @@ CREATE TABLE IF NOT EXISTS receita (
     status TEXT NOT NULL CHECK (status IN ('ativa', 'inativa'))
 );
 
-CREATE TABLE IF NOT EXISTS categoria (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL UNIQUE,
-    situacao TEXT NOT NULL DEFAULT 'ativa' CHECK (situacao IN ('ativa', 'inativa'))
-);
-
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP

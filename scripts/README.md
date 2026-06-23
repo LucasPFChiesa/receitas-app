@@ -50,6 +50,5 @@ Dentro do SQLite, comandos úteis:
 
 ```sql
 .tables
-.schema categoria
 SELECT * FROM schema_migrations;
 ```

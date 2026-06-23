@@ -279,13 +279,12 @@ As migrations atuais são:
 
 ```text
 000_create_schema_inicial.sql -> cria usuario, receita e dados iniciais
-001_create_categoria.sql      -> cria categoria e dados iniciais
 ```
 
 Para criar uma nova alteração de banco, crie um arquivo novo em `migrations/`:
 
 ```text
-migrations/002_nome_da_alteracao.sql
+migrations/001_nome_da_alteracao.sql
 ```
 
 Exemplo:
@@ -297,7 +296,7 @@ ALTER TABLE receita ADD COLUMN observacao TEXT;
 Depois teste localmente e envie:
 
 ```bash
-git add migrations/002_nome_da_alteracao.sql
+git add migrations/001_nome_da_alteracao.sql
 git commit -m "Adiciona migration de banco"
 git push origin integracao
 ```
@@ -320,14 +319,6 @@ Campos:
 - `data_registro`
 - `custo`
 - `tipo_receita`
-
-### Tabela `categoria`
-Criada pela migration `001_create_categoria.sql`.
-
-Campos:
-- `id`
-- `nome`
-- `situacao`
 
 ## Usuário padrão para acesso
 
