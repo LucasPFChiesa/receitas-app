@@ -262,31 +262,37 @@ def exportar_pdf():
         mimetype='application/pdf'
     )
 
-# Demonstração para aula:
-# Descomente esta função para provocar uma falha de qualidade no Radon.
-# Depois da apresentação, apague ou comente novamente este bloco.
-#
-# def exemplo_erro_qualidade(valor):
-#     if valor == 1:
-#         return 'um'
-#     elif valor == 2:
-#         return 'dois'
-#     elif valor == 3:
-#         return 'tres'
-#     elif valor == 4:
-#         return 'quatro'
-#     elif valor == 5:
-#         return 'cinco'
-#     elif valor == 6:
-#         return 'seis'
-#     elif valor == 7:
-#         return 'sete'
-#     elif valor == 8:
-#         return 'oito'
-#     elif valor == 9:
-#         return 'nove'
-#     else:
-#         return 'outro'
+# Demonstração para aula
+
+#CREATE TABLE IF NOT EXISTS categoria (
+#    id INTEGER PRIMARY KEY AUTOINCREMENT,
+#    nome TEXT NOT NULL UNIQUE,
+#    descricao TEXT NOT NULL DEFAULT)
+#);
+
+# Provar erro no Radon (MessDetector).
+
+#def exemplo_erro_qualidade(valor):
+# if valor == 1:
+#     return 'um'
+# elif valor == 2:
+#     return 'dois'
+# elif valor == 3:
+#     return 'tres'
+# elif valor == 4:
+#     return 'quatro'
+# elif valor == 5:
+#     return 'cinco'
+# elif valor == 6:
+#     return 'seis'
+# elif valor == 7:
+#     return 'sete'
+# elif valor == 8:
+#     return 'oito'
+# elif valor == 9:
+#     return 'nove'
+# else:
+#     return 'outro'
 
 if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG', '0') == '1'
