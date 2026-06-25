@@ -272,29 +272,29 @@ def exportar_pdf():
 
 # Provocar erro no Radon (MessDetector).
 
-def exemplo_erro_qualidade(valor):
- if valor == 1:
-     return 'um'
- elif valor == 2:
-     return 'dois'
- elif valor == 3:
-     return 'tres'
- elif valor == 4:
-     return 'quatro'
- elif valor == 5:
-     return 'cinco'
- elif valor == 6:
-     return 'seis'
- elif valor == 7:
-     return 'sete'
- elif valor == 8:
-     return 'oito'
- elif valor == 9:
-     return 'nove'
- elif valor == 10:
-     return 'dez'
- else:
-     return 'outro'
+#def exemplo_erro_qualidade(valor):
+# if valor == 1:
+#     return 'um'
+# elif valor == 2:
+#     return 'dois'
+# elif valor == 3:
+#     return 'tres'
+# elif valor == 4:
+#     return 'quatro'
+# elif valor == 5:
+#     return 'cinco'
+# elif valor == 6:
+#     return 'seis'
+# elif valor == 7:
+#     return 'sete'
+# elif valor == 8:
+#     return 'oito'
+# elif valor == 9:
+#     return 'nove'
+# elif valor == 10:
+#     return 'dez'
+# else:
+#     return 'outro'
 
 if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG', '0') == '1'
