@@ -291,6 +291,8 @@ def exemplo_erro_qualidade(valor):
      return 'oito'
  elif valor == 9:
      return 'nove'
+ elif valor == 10:
+     return 'dez'
  else:
      return 'outro'
 
