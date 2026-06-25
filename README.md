@@ -66,7 +66,6 @@ Arquivos principais desse fluxo:
 
 - `.github/workflows/integracao.yml`: pipeline com linter, mess detector e testes.
 - `.github/workflows/promover-producao.yml`: botão manual para promover a integração aprovada para produção.
-- `.github/workflows/rollback-producao.yml`: botão manual para voltar a produção para uma imagem anterior.
 - `Dockerfile`: imagem da aplicação Flask usando Gunicorn.
 - `docker-compose.yml`: ambiente de desenvolvimento local.
 - `runtime/start.sh`: prepara a VM, configura o runner e sobe homologação/produção sem clone permanente do código.
@@ -250,12 +249,6 @@ Para verificar qual imagem está rodando:
 ```bash
 sudo docker inspect receitas_app_homolog --format '{{.Config.Image}}'
 sudo docker inspect receitas_app_prod --format '{{.Config.Image}}'
-```
-
-Rollback de produção:
-
-```text
-Actions -> Rollback Producao -> Run workflow -> image_sha
 ```
 
 ## Estrutura do banco de dados

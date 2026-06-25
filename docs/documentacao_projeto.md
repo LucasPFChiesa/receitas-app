@@ -134,22 +134,6 @@ Depois é necessário aprovar o ambiente `production`.
 
 Esse workflow faz merge de `integracao` na `main` e atualiza produção com a mesma imagem já validada em homologação.
 
-## Rollback
-
-Workflow:
-
-```text
-.github/workflows/rollback-producao.yml
-```
-
-Uso:
-
-```text
-Actions -> Rollback Producao -> Run workflow
-```
-
-Informe o SHA/tag da imagem Docker para voltar a produção.
-
 ## Preparação da VM
 
 Na VM:

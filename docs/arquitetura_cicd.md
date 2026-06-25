@@ -236,17 +236,6 @@ Run workflow no GitHub
 -> atualiza o container receitas_app_prod
 ```
 
-## Rollback
-
-Workflow:
-
-```text
-.github/workflows/rollback-producao.yml
-```
-
-O rollback permite voltar a producao para uma imagem Docker ja publicada, informando
-o SHA da imagem aprovada.
-
 ## Demais ferramentas utilizadas
 
 - Docker: empacotamento e execucao da aplicacao.

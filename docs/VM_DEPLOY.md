@@ -143,23 +143,7 @@ Esse workflow:
 3. usa a mesma imagem que passou em homologação;
 4. atualiza o container `receitas_app_prod`.
 
-## 6. Rollback de produção
-
-Veja a imagem atual ou antiga:
-
-```bash
-sudo docker images 'ghcr.io/lucaspfchiesa/receitas-app'
-```
-
-No GitHub:
-
-```text
-Actions -> Rollback Producao -> Run workflow
-```
-
-Preencha `image_sha` com a tag/SHA da imagem para voltar.
-
-## 7. Comandos manuais úteis
+## 6. Comandos manuais úteis
 
 Subir os dois ambientes com uma imagem específica:
 
