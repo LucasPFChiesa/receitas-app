@@ -130,8 +130,6 @@ Para produção realmente aguardar aprovação, configure:
 Settings -> Environments -> production -> Required reviewers
 ```
 
-O passo a passo completo para a VM está em `docs/VM_DEPLOY.md`.
-
 ## Roteiro rapido da apresentacao
 
 No PC, subir desenvolvimento:
