@@ -22,17 +22,17 @@ def test_migration_base_cria_tabelas_principais():
     assert total_receitas == 10
 
 
-def test_migration_registra_arquivo_aplicado():
+def test_migrations_sql_sao_registradas():
     conn = sqlite3.connect(init_db.DB_PATH)
 
+    # Qualquer arquivo .sql em migrations deve ser aceito e registrado.
+    migrations_no_disco = [path.name for path in init_db.migration_files()]
     registros = conn.execute(
         'SELECT filename FROM schema_migrations ORDER BY filename'
     ).fetchall()
     conn.close()
 
-    assert [row[0] for row in registros] == [
-        '000_create_schema_inicial.sql',
-    ]
+    assert [row[0] for row in registros] == migrations_no_disco
 
 
 def test_migration_pode_rodar_novamente_sem_duplicar_dados():
@@ -42,10 +42,13 @@ def test_migration_pode_rodar_novamente_sem_duplicar_dados():
     init_db.apply_migrations(conn)
     conn.commit()
 
-    total_migrations = conn.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]
+    total_arquivos_sql = len(init_db.migration_files())
+    total_migrations = conn.execute(
+        'SELECT COUNT(*) FROM schema_migrations'
+    ).fetchone()[0]
     conn.close()
 
-    assert total_migrations == 1
+    assert total_migrations == total_arquivos_sql
 
 
 def test_inicializador_preserva_banco_existente_ao_aplicar_migrations():
