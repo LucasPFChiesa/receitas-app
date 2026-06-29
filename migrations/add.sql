@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS categoria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    descricao TEXT
+);
