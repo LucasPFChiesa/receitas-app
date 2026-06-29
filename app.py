@@ -270,6 +270,7 @@ def exportar_pdf():
 #    descricao TEXT
 #);
 
+
 # Provocar erro no Radon (MessDetector).
 
 #def exemplo_erro_qualidade(valor):
