@@ -266,8 +266,8 @@ def exportar_pdf():
 
 #CREATE TABLE IF NOT EXISTS categoria (
 #    id INTEGER PRIMARY KEY AUTOINCREMENT,
-#    nome TEXT NOT NULL UNIQUE,
-#    descricao TEXT NOT NULL DEFAULT)
+#    nome TEXT,
+#    descricao TEXT
 #);
 
 # Provocar erro no Radon (MessDetector).
