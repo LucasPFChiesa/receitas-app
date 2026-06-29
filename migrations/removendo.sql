@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS categoria;
+DROP TABLE IF EXISTS apagardepois;
